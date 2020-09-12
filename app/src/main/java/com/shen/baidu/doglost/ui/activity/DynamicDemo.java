@@ -1,4 +1,4 @@
-package com.shen.baidu.doglost.activity;
+package com.shen.baidu.doglost.ui.activity;
 
 import android.app.Activity;
 import android.hardware.Sensor;

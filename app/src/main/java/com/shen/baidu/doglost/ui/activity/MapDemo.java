@@ -1,4 +1,4 @@
-package com.shen.baidu.doglost.activity;
+package com.shen.baidu.doglost.ui.activity;
 
 import android.app.Activity;
 import android.hardware.Sensor;
@@ -28,11 +28,20 @@ import com.baidu.mapapi.map.MyLocationConfiguration.LocationMode;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.model.LatLng;
 import com.shen.baidu.doglost.R;
+import com.shen.baidu.doglost.bean.DogCurrentInfo;
+import com.shen.baidu.doglost.presenter.INetPresenter;
+import com.shen.baidu.doglost.presenter.impl.NetPresenterImpl;
+import com.shen.baidu.doglost.utils.LogUtils;
+import com.shen.baidu.doglost.utils.ToastUtils;
+import com.shen.baidu.doglost.view.INetCallBack;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 /**
  * 地图定位。
  */
-public class MapDemo extends Activity implements SensorEventListener {
+public class MapDemo extends Activity implements SensorEventListener, INetCallBack {
 
 	// 定位相关
 	LocationClient mLocClient;
@@ -48,84 +57,112 @@ public class MapDemo extends Activity implements SensorEventListener {
 	private double mCurrentLon = 0.0;
 	private float mCurrentAccracy;
 
-	MapView mMapView;
+	boolean isFirstStart = true;
+	boolean isOpen = false;
+
 	BaiduMap mBaiduMap;
 
-	// UI相关
-	OnCheckedChangeListener radioButtonListener;
+	@BindView(R.id.bmapView)
+	MapView mMapView;
+
+	@BindView(R.id.button1)
 	Button requestLocButton;
+
+	@BindView(R.id.button_open)
+	Button searchButton;
+
+//	@BindView(R.id.button_close)
+//	Button searchClose;
+
+	@BindView(R.id.radioGroup)
+	RadioGroup mGroup;
+
+
 	boolean isFirstLoc = true; // 是否首次定位
 	private MyLocationData locData;
 	private float direction;
+
+	private INetPresenter presenter;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_map);
-		requestLocButton = (Button) findViewById(R.id.button1);
 		mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);// 获取传感器管理服务
 		mCurrentMode = LocationMode.NORMAL;
-		requestLocButton.setText("普通");
+		initView();
+		initListener();
+		initLocation();
+		initPresenter();
+	}
 
-		OnClickListener btnClickListener = new OnClickListener() {
-			public void onClick(View v) {
-				switch (mCurrentMode) {
-				case NORMAL:
-					requestLocButton.setText("跟随");
-					mCurrentMode = LocationMode.FOLLOWING;
-					mBaiduMap.setMyLocationConfiguration(
-							new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
-					MapStatus.Builder builder = new MapStatus.Builder();
-					builder.overlook(0);
-					mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
-					break;
-				case COMPASS:
-					requestLocButton.setText("普通");
-					mCurrentMode = LocationMode.NORMAL;
-					mBaiduMap.setMyLocationConfiguration(
-							new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
-					MapStatus.Builder builder1 = new MapStatus.Builder();
-					builder1.overlook(0);
-					mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder1.build()));
-					break;
-				case FOLLOWING:
-					requestLocButton.setText("罗盘");
-					mCurrentMode = LocationMode.COMPASS;
-					mBaiduMap.setMyLocationConfiguration(
-							new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
-					break;
-				default:
-					break;
-				}
-			}
-		};
-		
-		requestLocButton.setOnClickListener(btnClickListener);
-
-		RadioGroup group = (RadioGroup) this.findViewById(R.id.radioGroup);
-		radioButtonListener = new OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(RadioGroup group, int checkedId) {
-				if (checkedId == R.id.defaulticon) {
-					// 传入null则，恢复默认图标
-					mCurrentMarker = null;
-					mBaiduMap.setMyLocationConfiguration(new MyLocationConfiguration(mCurrentMode, true, null));
-				}
-				if (checkedId == R.id.customicon) {
-					// 修改为自定义marker
-					mCurrentMarker = BitmapDescriptorFactory.fromResource(R.drawable.icon_geo);
-					mBaiduMap.setMyLocationConfiguration(new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker,
-							accuracyCircleFillColor, accuracyCircleStrokeColor));
-				}
-			}
-		};
-		group.setOnCheckedChangeListener(radioButtonListener);
-
-		// 地图初始化
-		mMapView = (MapView) findViewById(R.id.bmapView);
+	/**
+	 * 初始化视图
+	 */
+	private void initView() {
+		ButterKnife.bind(this);
 		mBaiduMap = mMapView.getMap();
+		requestLocButton.setText("普通");
 		// 开启定位图层
 		mBaiduMap.setMyLocationEnabled(true);
+	}
+
+	private void initPresenter() {
+		presenter = NetPresenterImpl.getInstance();
+		presenter.registerCallback(this);
+	}
+
+	private void initListener() {
+		requestLocButton.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				switch (mCurrentMode) {
+					case NORMAL:
+						requestLocButton.setText("跟随");
+						mCurrentMode = LocationMode.FOLLOWING;
+						mBaiduMap.setMyLocationConfiguration(
+								new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
+						MapStatus.Builder builder = new MapStatus.Builder();
+						builder.overlook(0);
+						mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+						break;
+					case COMPASS:
+						requestLocButton.setText("普通");
+						mCurrentMode = LocationMode.NORMAL;
+						mBaiduMap.setMyLocationConfiguration(
+								new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
+						MapStatus.Builder builder1 = new MapStatus.Builder();
+						builder1.overlook(0);
+						mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder1.build()));
+						break;
+					case FOLLOWING:
+						requestLocButton.setText("罗盘");
+						mCurrentMode = LocationMode.COMPASS;
+						mBaiduMap.setMyLocationConfiguration(
+								new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
+						break;
+					default:
+						break;
+				}
+			}
+		});
+
+//		mGroup.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+//			@Override
+//			public void onCheckedChanged(RadioGroup group, int checkedId) {
+//				if (checkedId == R.id.defaulticon) {
+//					// 传入null则，恢复默认图标
+//					mCurrentMarker = null;
+//					mBaiduMap.setMyLocationConfiguration(new MyLocationConfiguration(mCurrentMode, true, null));
+//				}
+//				if (checkedId == R.id.customicon) {
+//					// 修改为自定义marker
+//					mCurrentMarker = BitmapDescriptorFactory.fromResource(R.drawable.icon_geo);
+//					mBaiduMap.setMyLocationConfiguration(new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker,
+//							accuracyCircleFillColor, accuracyCircleStrokeColor));
+//				}
+//			}
+//		});
+
 
 		mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
 			@Override
@@ -140,6 +177,30 @@ public class MapDemo extends Activity implements SensorEventListener {
 			}
 		});
 
+		searchButton.setOnClickListener(v -> {
+			if (presenter != null) {
+				if (isOpen) {
+					presenter.delConnect();
+					isOpen = false;
+					searchButton.setText("打开寻狗");
+				} else {
+					if (isFirstStart) {
+						presenter.firstConnect();
+						isFirstStart = false;
+					} else {
+						presenter.connect();
+					}
+					searchButton.setText("关闭寻狗");
+					isOpen = true;
+				}
+			}
+		});
+	}
+
+	/**
+	 * 将定位的一些参数进行设置。
+	 */
+	private void initLocation() {
 		// 定位初始化
 		mLocClient = new LocationClient(this);
 		mLocClient.registerLocationListener(myListener);
@@ -151,8 +212,8 @@ public class MapDemo extends Activity implements SensorEventListener {
 		//option.setNeedDeviceDirect(true);
 		mLocClient.setLocOption(option);
 		mLocClient.start();
-		
 	}
+
 
 	/**
 	 * 这个负责设置转向的。
@@ -171,11 +232,61 @@ public class MapDemo extends Activity implements SensorEventListener {
 			
 		}
 		lastX = x;
-
 	}
 
 	@Override
 	public void onAccuracyChanged(Sensor sensor, int i) {
+
+	}
+
+	/**
+	 * 当数据来了就回调，在这里把小狗的位置实时的更新，并判断是否在圈/电子围栏内。
+	 * @param dogInfo
+	 */
+	@Override
+	public void onNetDataLoaded(DogCurrentInfo dogInfo) {
+		LogUtils.d(this, "数据加载成功");
+		// 实时更新
+
+	}
+
+	/**
+	 * 网络错误，或者长时间不喂狗。
+	 */
+	@Override
+	public void onNetError() {
+		ToastUtils.showToast("网络错误，未能连接上服务器");
+	}
+
+	/**
+	 * 与服务器连接成功的回调
+	 */
+	@Override
+	public void onNetSuccess() {
+		ToastUtils.showToast("连接服务器成功");
+	}
+
+	/**
+	 * 心跳回调。
+	 */
+	@Override
+	public void heartBeatLoaded() {
+
+	}
+
+	/**
+	 * 加载中。
+	 */
+	@Override
+	public void loading() {
+
+	}
+
+	/**
+	 * 正常的断开连接
+	 */
+	@Override
+	public void onConnectQuit() {
 
 	}
 
@@ -240,6 +351,7 @@ public class MapDemo extends Activity implements SensorEventListener {
 		mBaiduMap.setMyLocationEnabled(false);
 		mMapView.onDestroy();
 		mMapView = null;
+		presenter.unregisterCallback(this);
 		super.onDestroy();
 	}
 

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">BaiduMapApi</string>
+    <string name="btn_open_search">开启寻狗</string>
+    <string name="btn_close_search">关闭寻狗</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.shen.baidu.doglost.activity;
+package com.shen.baidu.doglost.ui.activity;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -15,9 +15,9 @@ import android.widget.Toast;
 
 import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.adapter.LogAdapter;
-import com.shen.baidu.doglost.bean.HandShakeBean;
 import com.shen.baidu.doglost.bean.LogBean;
 import com.shen.baidu.doglost.bean.MsgDataBean;
+import com.shen.baidu.doglost.bean.PulseBean;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
 import com.xuhao.didi.core.pojo.OriginalData;
@@ -59,10 +59,16 @@ public class TestSocketActivity extends AppCompatActivity {
 
         @Override
         public void onSocketConnectionSuccess(ConnectionInfo info, String action) {
-            mManager.send(new HandShakeBean());
+//            mManager.send(new HandShakeBean());
             mConnect.setText("DisConnect");
             mIPET.setEnabled(false);
             mPortET.setEnabled(false);
+            /**
+             * 开始发送心跳连接。
+             */
+            String str = "心跳连接测试";
+            byte[] bytes = str.getBytes();
+            mManager.getPulseManager().setPulseSendable(new PulseBean()).pulse();
         }
 
         @Override
@@ -94,12 +100,24 @@ public class TestSocketActivity extends AppCompatActivity {
          */
         @Override
         public void onSocketReadResponse(ConnectionInfo info, String action, OriginalData data) {
-            String str = new String(data.getBodyBytes(), Charset.forName("utf-8"));
-            logRece(str);
+            /**
+             * 喂狗
+             */
+            byte[] headBytes = data.getHeadBytes();
+            if (data.getHeadBytes()[0] == (byte) 0xFF && data.getHeadBytes()[1] == (byte) 0x0F) {
+                mManager.getPulseManager().feed();
+            }
+            /**
+             * 数据正常回送。
+             */
+            if (data.getHeadBytes()[0] == (byte) 0xFF && data.getHeadBytes()[1] == (byte) 0xE1) {
+                String str = new String(data.getBodyBytes(), Charset.forName("utf-8"));
+                logRece(str);
+            }
         }
 
         /**
-         * 发送后在这里回调。
+         * 发送的时候进入这里
          * TODO
          * @param info
          * @param action {@link IAction#ACTION_WRITE_COMPLETE}
@@ -111,6 +129,11 @@ public class TestSocketActivity extends AppCompatActivity {
             logSend(str);
         }
 
+        /**
+         * 每次在心跳的时候发送。
+         * @param info
+         * @param data
+         */
         @Override
         public void onPulseSend(ConnectionInfo info, IPulseSendable data) {
             String str = new String(data.parse(), Charset.forName("utf-8"));
@@ -166,6 +189,8 @@ public class TestSocketActivity extends AppCompatActivity {
         mOkOptions = new OkSocketOptions.Builder()
                 .setReconnectionManager(new NoneReconnect())
                 .setConnectTimeoutSecond(10)
+                .setPulseFrequency(5000)
+                .setPulseFeedLoseTimes(10)
                 .setCallbackThreadModeToken(new OkSocketOptions.ThreadModeToken() {
                     @Override
                     public void handleCallbackEvent(ActionDispatcher.ActionRunnable runnable) {
@@ -181,12 +206,12 @@ public class TestSocketActivity extends AppCompatActivity {
                      */
                     @Override
                     public int getHeaderLength() {
-                        return 4;
+                        return 3;
                     }
 
                     @Override
                     public int getBodyLength(byte[] header, ByteOrder byteOrder) {
-                        return header[3];
+                        return header[2];
                     }
                 })
                 .build();
@@ -288,4 +313,29 @@ public class TestSocketActivity extends AppCompatActivity {
             mManager.unRegisterReceiver(adapter);
         }
     }
+
+    /**
+     * 发送数据
+     * @param carId
+     */
+//    private void sendCarId(byte carId)
+//    {
+//        if (mManager!=null && mManager.isConnect()) {
+//            byte[] buffer = new byte[9];
+//            buffer[0]=(byte) 0xFF;
+//            buffer[1]=0x0F;
+//
+//            buffer[2]=0x04;
+//
+//            buffer[3]=appId;
+//            buffer[4]=carId;
+//            int crc = Crc16Sum(buffer, 5);
+//            buffer[5] = (byte) (crc >> 8);
+//            buffer[6] = (byte) crc;
+//
+//            buffer[7]=0x0D;
+//            buffer[8]=0x0A;
+//            mManager.send(new SendData(buffer));
+//        }
+//    }
 }

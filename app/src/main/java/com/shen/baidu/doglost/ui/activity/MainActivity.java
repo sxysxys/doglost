@@ -1,4 +1,4 @@
-package com.shen.baidu.doglost.activity;
+package com.shen.baidu.doglost.ui.activity;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
