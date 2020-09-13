@@ -2,4 +2,16 @@
     <string name="app_name">BaiduMapApi</string>
     <string name="btn_open_search">开启寻狗</string>
     <string name="btn_close_search">关闭寻狗</string>
+    <string name="title_text">围栏设置</string>
+    <string name="fence_shape">围栏形状</string>
+    <string name="circle_fence">圆形</string>
+    <string name="polygon_fence">多边形</string>
+    <string name="vertexes_number">顶点数</string>
+    <string name="sure_btn_text">确定</string>
+    <string name="fence_radius">半径（单位：米）</string>
+    <string name="fence_radius_hint">100</string>
+    <string name="cancel">取消</string>
+    <string name="sure">确定</string>
+    <string name="create_circle">创建圆形围栏</string>
+    <string name="fence_create_polygon">创建多边形围栏</string>
 </resources>

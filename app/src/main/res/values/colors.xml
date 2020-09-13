@@ -3,4 +3,12 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="layout_create">#008EEF</color>
+    <color name="color_dialog_title">#323232</color>
+    <color name="color_list_item">#666666</color>
+    <color name="gray">#464646</color>
+    <color name="cancel_bag">#F4F4F4</color>
+    <color name="sure_bg">#0084FE</color>
+    <color name="white">#ffffffff</color>
+    <color name="layout_title">#008EEF</color>
 </resources>

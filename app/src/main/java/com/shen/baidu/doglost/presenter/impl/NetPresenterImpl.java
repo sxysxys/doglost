@@ -32,7 +32,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 数据提供，设置成单例模式
+ * 服务器数据提供，设置成单例模式
  */
 public class NetPresenterImpl implements INetPresenter {
 

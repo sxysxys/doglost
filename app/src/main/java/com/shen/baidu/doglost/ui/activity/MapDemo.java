@@ -1,6 +1,8 @@
 package com.shen.baidu.doglost.ui.activity;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -11,6 +13,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
+import android.widget.Toast;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
@@ -19,21 +22,39 @@ import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.CircleOptions;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationConfiguration.LocationMode;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.Overlay;
+import com.baidu.mapapi.map.OverlayOptions;
+import com.baidu.mapapi.map.PolygonOptions;
+import com.baidu.mapapi.map.PolylineOptions;
+import com.baidu.mapapi.map.Stroke;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.utils.SpatialRelationUtil;
+import com.shen.baidu.doglost.DemoApplication;
 import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.bean.DogCurrentInfo;
+import com.shen.baidu.doglost.constant.Const;
+import com.shen.baidu.doglost.constant.FenceShape;
 import com.shen.baidu.doglost.presenter.INetPresenter;
 import com.shen.baidu.doglost.presenter.impl.NetPresenterImpl;
+import com.shen.baidu.doglost.ui.dialog.FenceCreateDialog;
+import com.shen.baidu.doglost.utils.BitmapUtil;
 import com.shen.baidu.doglost.utils.LogUtils;
 import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.INetCallBack;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -41,15 +62,13 @@ import butterknife.ButterKnife;
 /**
  * 地图定位。
  */
-public class MapDemo extends Activity implements SensorEventListener, INetCallBack {
+public class MapDemo extends Activity implements SensorEventListener, INetCallBack, BaiduMap.OnMapClickListener {
 
 	// 定位相关
 	LocationClient mLocClient;
 	public MyLocationListenner myListener = new MyLocationListenner();
 	private LocationMode mCurrentMode;
 	BitmapDescriptor mCurrentMarker;
-	private static final int accuracyCircleFillColor = 0xAAFFFF88;
-	private static final int accuracyCircleStrokeColor = 0xAA00FF00;
 	private SensorManager mSensorManager;
 	private Double lastX = 0.0;
 	private int mCurrentDirection = 0;
@@ -71,11 +90,13 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@BindView(R.id.button_open)
 	Button searchButton;
 
-//	@BindView(R.id.button_close)
-//	Button searchClose;
+	@BindView(R.id.btn_create)
+	Button createButton;
 
-	@BindView(R.id.radioGroup)
-	RadioGroup mGroup;
+	@BindView(R.id.btn_clear)
+	Button clearButton;
+
+	private DemoApplication mApplication;
 
 
 	boolean isFirstLoc = true; // 是否首次定位
@@ -83,6 +104,20 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	private float direction;
 
 	private INetPresenter presenter;
+	private FenceShape fenceShape = FenceShape.circle;
+	private int mVertexesNumber;
+	// 设置圆形坐标的原点
+	private LatLng circleCenter;
+	// 设置多边形的几个顶点
+	private List<LatLng> mapVertexes = new ArrayList<>();//顶点坐标（地图坐标类型）
+	// 此时在地图上画了几个点了。
+	private int vertexIndex = 0;
+	private FenceCreateDialog fenceCreateDialog;
+	private FenceCreateDialog.Callback createCallback;
+	private double radius = 0;
+
+	private boolean isDraw = false;
+	private boolean isInner = true;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -90,6 +125,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 		setContentView(R.layout.activity_map);
 		mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);// 获取传感器管理服务
 		mCurrentMode = LocationMode.NORMAL;
+		mApplication = (DemoApplication) getApplication();
 		initView();
 		initListener();
 		initLocation();
@@ -117,7 +153,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 			public void onClick(View v) {
 				switch (mCurrentMode) {
 					case NORMAL:
-						requestLocButton.setText("跟随");
+						requestLocButton.setText("跟随模式");
 						mCurrentMode = LocationMode.FOLLOWING;
 						mBaiduMap.setMyLocationConfiguration(
 								new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
@@ -126,7 +162,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 						mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
 						break;
 					case COMPASS:
-						requestLocButton.setText("普通");
+						requestLocButton.setText("普通模式");
 						mCurrentMode = LocationMode.NORMAL;
 						mBaiduMap.setMyLocationConfiguration(
 								new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
@@ -135,7 +171,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 						mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder1.build()));
 						break;
 					case FOLLOWING:
-						requestLocButton.setText("罗盘");
+						requestLocButton.setText("罗盘模式");
 						mCurrentMode = LocationMode.COMPASS;
 						mBaiduMap.setMyLocationConfiguration(
 								new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker));
@@ -145,23 +181,6 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 				}
 			}
 		});
-
-//		mGroup.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-//			@Override
-//			public void onCheckedChanged(RadioGroup group, int checkedId) {
-//				if (checkedId == R.id.defaulticon) {
-//					// 传入null则，恢复默认图标
-//					mCurrentMarker = null;
-//					mBaiduMap.setMyLocationConfiguration(new MyLocationConfiguration(mCurrentMode, true, null));
-//				}
-//				if (checkedId == R.id.customicon) {
-//					// 修改为自定义marker
-//					mCurrentMarker = BitmapDescriptorFactory.fromResource(R.drawable.icon_geo);
-//					mBaiduMap.setMyLocationConfiguration(new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker,
-//							accuracyCircleFillColor, accuracyCircleStrokeColor));
-//				}
-//			}
-//		});
 
 
 		mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
@@ -195,6 +214,88 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 				}
 			}
 		});
+
+		/**
+		 * 点击创建按钮，跳转后将数据带回来。
+		 */
+		createButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (!isDraw) {
+					Intent intent = new Intent(MapDemo.this,CreateFenceOptions.class);
+					startActivityForResult(intent, Const.REQUEST_CODE);
+				} else {
+					ToastUtils.showToast("请先清空围栏");
+				}
+			}
+		});
+
+		clearButton.setOnClickListener(v -> {
+			resetStatus();
+		});
+		/**
+		*   创建围栏的回调，也就是将图形在图中画出来或者取消。
+		*/
+		createCallback = new FenceCreateDialog.Callback() {
+
+			@Override
+			public void onSureCallback(double radius) {
+				MapDemo.this.radius = radius;
+
+				OverlayOptions overlayOptions = null;
+
+				if (FenceShape.circle == fenceShape) {
+					overlayOptions = new CircleOptions().fillColor(0x000000FF).center(circleCenter)
+							.stroke(new Stroke(5, Color.rgb(0xFF, 0x06, 0x01))).radius((int) radius);
+				} else if (FenceShape.polygon == fenceShape) {
+					overlayOptions = new PolygonOptions().points(mapVertexes)
+							.stroke(new Stroke(mapVertexes.size(), Color.rgb(0xFF, 0x06, 0x01)))
+							.fillColor(0x30FFFFFF);
+				}
+
+				// 把图画出来
+				mBaiduMap.addOverlay(overlayOptions);
+				isDraw = true;
+				// 取消回调方法
+				mBaiduMap.setOnMapClickListener(null);
+			}
+
+			@Override
+			public void onCancelCallback() {
+				resetStatus();
+			}
+		};
+	}
+
+	private void resetStatus() {
+		isDraw = false;
+		vertexIndex = 0;
+		circleCenter = null;
+		mapVertexes.clear();
+		mBaiduMap.clear();
+	}
+
+	/**
+	 * 这里实现回调
+	 * @param requestCode
+	 * @param resultCode
+	 * @param data
+	 */
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (data == null) {
+			return;
+		}
+		if (data.hasExtra("fenceShape")) {
+			this.fenceShape = FenceShape.valueOf(data.getStringExtra("fenceShape"));
+		}
+
+		if (data.hasExtra("vertexesNumber")) {
+			mVertexesNumber = data.getIntExtra("vertexesNumber",3);
+		}
+
+		// 这里是方法的回调
+		mBaiduMap.setOnMapClickListener(this);
 	}
 
 	/**
@@ -246,8 +347,9 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@Override
 	public void onNetDataLoaded(DogCurrentInfo dogInfo) {
 		LogUtils.d(this, "数据加载成功");
-		// 实时更新
+		// TODO:先将狗的位置显示
 
+		// TODO:判断狗的位置，如果超出则报警
 	}
 
 	/**
@@ -264,6 +366,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@Override
 	public void onNetSuccess() {
 		ToastUtils.showToast("连接服务器成功");
+
 	}
 
 	/**
@@ -291,6 +394,44 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	}
 
 	/**
+	 * 当画地图搞完了，只要点击地图就回调到这里。
+	 * @param latLng
+	 */
+	@Override
+	public void onMapClick(LatLng latLng) {
+		switch (fenceShape) {
+			case circle:
+				circleCenter = latLng;
+				break;
+
+			case polygon:
+				mapVertexes.add(latLng);//本地画图点集合
+				vertexIndex++;
+				BitmapUtil.getMark(mApplication, vertexIndex);
+				OverlayOptions overlayOptions = new MarkerOptions().position(latLng)
+						.icon(BitmapUtil.getMark(mApplication, vertexIndex)).zIndex(9).draggable(true);
+				mBaiduMap.addOverlay(overlayOptions);
+				break;
+			default:
+				break;
+		}
+
+		if (null == fenceCreateDialog) {
+			fenceCreateDialog = new FenceCreateDialog(this, createCallback);
+		}
+		if (FenceShape.circle == fenceShape || vertexIndex == mVertexesNumber) {
+			//定点数相同或者是画圆，就弹出框设置。
+			fenceCreateDialog.setFenceShape(fenceShape);
+			fenceCreateDialog.show();
+		}
+	}
+
+	@Override
+	public boolean onMapPoiClick(MapPoi mapPoi) {
+		return false;
+	}
+
+	/**
 	 * 定位SDK监听函数，在设定时间来一次（1s）
 	 */
 	public class MyLocationListenner implements BDLocationListener {
@@ -306,7 +447,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 			mCurrentAccracy = location.getRadius();
 			locData = new MyLocationData.Builder().accuracy(location.getRadius())
 					// 此处设置开发者获取到的方向信息，顺时针0-360
-					.direction(mCurrentDirection).latitude(location.getLatitude()).longitude(location.getLongitude()).build();
+					.direction(mCurrentDirection).latitude(mCurrentLat).longitude(mCurrentLon).build();
 			mBaiduMap.setMyLocationData(locData);
 			// 首次定位的时候，需要放大以观察位置。
 			if (isFirstLoc) {
@@ -316,6 +457,23 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 				builder.target(ll).zoom(18.0f);
 				mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
 			}
+
+			/**
+			 * 自己测试，判断是否超出边界
+			 */
+			if (isDraw) {
+				LatLng curLatLng = new LatLng(mCurrentLat, mCurrentLon);
+				if (fenceShape == FenceShape.circle) {
+					isInner = SpatialRelationUtil.isCircleContainsPoint(circleCenter, (int) radius, curLatLng);
+				}
+				if (fenceShape == FenceShape.polygon) {
+					isInner = SpatialRelationUtil.isPolygonContainsPoint(mapVertexes, curLatLng);
+				}
+				if (!isInner) {
+					ToastUtils.showToast("出界了!");
+				}
+			}
+
 		}
 
 	}

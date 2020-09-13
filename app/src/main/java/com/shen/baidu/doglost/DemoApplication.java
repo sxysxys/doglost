@@ -6,7 +6,11 @@ import android.content.Context;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.CoordType;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class DemoApplication extends Application {
+
+    private AtomicInteger mSequenceGenerator = new AtomicInteger();
 
     private static Context context;
 
@@ -26,4 +30,7 @@ public class DemoApplication extends Application {
         return context;
     }
 
+    public int getTag() {
+        return mSequenceGenerator.incrementAndGet();
+    }
 }

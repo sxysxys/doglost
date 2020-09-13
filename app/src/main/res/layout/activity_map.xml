@@ -29,5 +29,38 @@
         android:layout_marginLeft="25dp"
         android:layout_marginTop="10dip" />
 
+    <LinearLayout
+        android:id="@+id/layout_tracing_bottom"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="25dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="1">
+
+        <Button
+            android:id="@+id/btn_create"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:layout_marginLeft="55dp"
+            android:layout_marginRight="10dp"
+            android:background="@mipmap/bg_btn_cancel"
+            android:text="创建电子围栏"
+            android:textColor="@color/layout_create"/>
+
+        <Button
+            android:id="@+id/btn_clear"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="55dp"
+            android:text="一键清除"
+            android:background="@mipmap/bg_btn_cancel"
+            android:textColor="@color/layout_create" />
+
+    </LinearLayout>
+
 
 </RelativeLayout>
