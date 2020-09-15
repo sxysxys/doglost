@@ -59,7 +59,7 @@
                         android:inputType="text"
                         android:lines="1"
                         android:maxLines="1"
-                        android:text="104.238.184.237" />
+                        android:text="60.166.160.91" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -76,7 +76,7 @@
                         android:inputType="number"
                         android:lines="1"
                         android:maxLines="1"
-                        android:text="8080" />
+                        android:text="8233" />
 
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>

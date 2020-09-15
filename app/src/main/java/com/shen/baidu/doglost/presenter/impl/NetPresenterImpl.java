@@ -5,9 +5,9 @@ import android.os.Message;
 
 import androidx.annotation.NonNull;
 
-import com.shen.baidu.doglost.bean.DogCurrentInfo;
-import com.shen.baidu.doglost.bean.MsgDataBean;
-import com.shen.baidu.doglost.bean.PulseBean;
+import com.shen.baidu.doglost.model.domain.DogCurrentInfo;
+import com.shen.baidu.doglost.model.domain.MsgDataBean;
+import com.shen.baidu.doglost.model.domain.PulseBean;
 import com.shen.baidu.doglost.constant.INetParams;
 import com.shen.baidu.doglost.presenter.INetPresenter;
 import com.shen.baidu.doglost.utils.DataHandlerUtil;
@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import static com.shen.baidu.doglost.utils.DataHandlerUtil.Crc16Sum;
 
 /**
  * 服务器数据提供，设置成单例模式
@@ -187,9 +189,8 @@ public class NetPresenterImpl implements INetPresenter {
             /**
              * 开启心跳
              */
-            String str = "心跳连接测试";
-            byte[] bytes = str.getBytes();
-            mManager.getPulseManager().setPulseSendable(new PulseBean()).pulse();
+            byte[] temp = getTempBytes();
+            mManager.getPulseManager().setPulseSendable(new PulseBean(temp)).pulse();
             if (netCallBack != null) {
                 netCallBack.onNetSuccess();
             }
@@ -239,20 +240,22 @@ public class NetPresenterImpl implements INetPresenter {
             if (data.getHeadBytes()[0] == (byte) 0xFF && data.getHeadBytes()[1] == (byte) 0xE1) {
                 // TODO 进行CRC校验
                 byte[] buf = concat(data.getHeadBytes(), data.getBodyBytes());
-//                int crc16Sum = Crc16Sum(buf, buf.length - 2);
-//                byte crcL = (byte) (crc16Sum & 0xFFFF);
-//                byte crcH = (byte) ((crc16Sum & 0xFFFF) >> 8);
-                // TODO 将数据封装
-                // 经度
-                byte[] lon = new byte[]{buf[4],buf[5],buf[6],buf[7]};
-                byte[] lat = new byte[]{buf[8],buf[9],buf[10],buf[11]};
-                float lonfloat = DataHandlerUtil.getFloat(lon);
-                float latfloat = DataHandlerUtil.getFloat(lat);
-                // 纬度
-                DogCurrentInfo dogCurrentInfo = new DogCurrentInfo.Builder().
-                        lon(lonfloat).lat(latfloat)
-                        .bat(buf[11]).status(buf[12]).build();
-                netCallBack.onNetDataLoaded(dogCurrentInfo);
+                int crc16Sum = Crc16Sum(buf, buf.length - 2);
+                byte crcL = (byte) (crc16Sum & 0xFFFF);
+                byte crcH = (byte) ((crc16Sum & 0xFFFF) >> 8);
+                if (crcH == (byte) (buf[13] & 0xFF) && crcL ==(byte)(buf[14] & 0xFF)) {
+                    // TODO 将数据封装
+                    // 经度
+                    byte[] lon = new byte[]{buf[4],buf[5],buf[6],buf[7]};
+                    byte[] lat = new byte[]{buf[8],buf[9],buf[10],buf[11]};
+                    float lonfloat = DataHandlerUtil.getFloat(lon);
+                    float latfloat = DataHandlerUtil.getFloat(lat);
+                    // 纬度
+                    DogCurrentInfo dogCurrentInfo = new DogCurrentInfo.Builder().
+                            lon(lonfloat).lat(latfloat)
+                            .bat(buf[11]).status(buf[12]).build();
+                    netCallBack.onNetDataLoaded(dogCurrentInfo);
+                }
             }
         }
 
@@ -280,6 +283,19 @@ public class NetPresenterImpl implements INetPresenter {
         }
     };
 
+    /**
+     * 拿到心跳数据
+     * @return
+     */
+    private byte[] getTempBytes() {
+        byte[] temp=new byte[]{(byte) 0xFF,(byte) 0xE2,0x05,0x00,0x00,0x00,0x00, 0x00, 0x0D, 0x0A};
+        temp[3]= 0x01;
+        int crc = Crc16Sum(temp, 6);
+        temp[6] = (byte) (crc >> 8);
+        temp[7] = (byte) crc;
+        return temp;
+    }
+
     public static <T> byte[] concat(byte[] first, byte[] second) {
         byte[] result = Arrays.copyOf(first, first.length + second.length);
         System.arraycopy(second, 0, result, first.length, second.length);
@@ -304,7 +320,7 @@ public class NetPresenterImpl implements INetPresenter {
             if (mManager != null) {
                 // 如果此时已经连上了，就一直给服务器发心跳包。
                 if (mManager.isConnect()) {
-                    mManager.send(new PulseBean());
+//                    mManager.send(new PulseBean());
                 }
                 // 如果没有连上，就进入断线重连。
                 else {

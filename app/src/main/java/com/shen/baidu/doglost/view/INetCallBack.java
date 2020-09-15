@@ -1,36 +1,17 @@
 package com.shen.baidu.doglost.view;
 
-import com.shen.baidu.doglost.bean.DogCurrentInfo;
+import com.shen.baidu.doglost.base.IBaseCallback;
+import com.shen.baidu.doglost.model.domain.DogCurrentInfo;
 
 /**
  * ui层接口回调。
  */
-public interface INetCallBack {
-    /**
-     * 当数据回来，推给地图上显示
-     * @param dogInfo
-     */
-    void onNetDataLoaded(DogCurrentInfo dogInfo);
-
-    /**
-     * 网络错误连接失败，或者异常断开
-     */
-    void onNetError();
+public interface INetCallBack extends IBaseCallback<DogCurrentInfo> {
 
     /**
      * 正常断开。
      */
     void onConnectQuit();
-
-    /**
-     * 加载地图中。
-     */
-    void loading();
-
-    /**
-     * 连接成功
-     */
-    void onNetSuccess();
 
     /**
      * 心跳回来了

@@ -1,7 +1,7 @@
 package com.shen.baidu.doglost.constant;
 
 public interface INetParams {
-    String ip = "192.168.0.116";
+    String ip = "60.166.106.91";
 
-    int port = 6668;
+    int port = 8233;
 }

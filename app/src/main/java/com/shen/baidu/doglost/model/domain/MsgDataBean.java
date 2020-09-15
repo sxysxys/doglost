@@ -1,11 +1,10 @@
-package com.shen.baidu.doglost.bean;
+package com.shen.baidu.doglost.model.domain;
 
 
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.Charset;
 
 /**
  * 用来发送消息，送入要发送的数据

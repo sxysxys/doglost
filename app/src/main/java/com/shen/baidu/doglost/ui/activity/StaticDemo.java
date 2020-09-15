@@ -62,7 +62,11 @@ public class StaticDemo extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_sta);
-		
+		initView();
+		initListener();
+	}
+
+	private void initView() {
 		// 地图初始化
 		mMapView = (MapView) findViewById(R.id.bmapView);
 		mBaiduMap = mMapView.getMap();
@@ -70,19 +74,19 @@ public class StaticDemo extends Activity {
 		mBaiduMap.setMyLocationEnabled(true);
 
 		/**
-		 * 地图坐标的转换。
+		 * 地图坐标的转换，拿到相应的点。
 		 */
 		coordinateConvert();
 
 		/**
-		 * target代表了此时的需要放大显示的大致位置。
+		 * target代表了此时的需要放大显示的大致位置，target是所有点的中点。
 		 */
 		builder = new MapStatus.Builder();
 		builder.target(target).zoom(18f);
 		mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
 
 		// 添加起点标记
-		MarkerOptions oStart = new MarkerOptions();//地图标记覆盖物参数配置类 
+		MarkerOptions oStart = new MarkerOptions();//地图标记覆盖物参数配置类
 		oStart.position(latLngs.get(0));//覆盖物位置点，第一个点为起点
 		oStart.icon(startBD);//设置覆盖物图片
 		oStart.zIndex(1);//设置覆盖物Index
@@ -93,18 +97,27 @@ public class StaticDemo extends Activity {
 		mMarkerB = (Marker) (mBaiduMap.addOverlay(oFinish));
 
 		/**
+		 * 将轨迹画出来，将轨迹标记为第3个。
+		 */
+		OverlayOptions ooPolyline = new PolylineOptions().width(13).color(0xAAFF0000).points(latLngs);
+		mPolyline = (Polyline) mBaiduMap.addOverlay(ooPolyline);
+		mPolyline.setZIndex(3);
+	}
+
+	private void initListener() {
+		/**
 		 * 设置marker的点击事件
 		 */
 		mBaiduMap.setOnMarkerClickListener(new OnMarkerClickListener() {
             public boolean onMarkerClick(final Marker marker) {
-                
+
                 if (marker.getZIndex() == mMarkerA.getZIndex() ) {//如果是起始点图层
                 	TextView textView = new TextView(getApplicationContext());
                 	textView.setText("起点");
                 	textView.setTextColor(Color.BLACK);
                 	textView.setGravity(Gravity.CENTER);
                 	textView.setBackgroundResource(R.drawable.popup);
-                	
+
                 	//设置信息窗口点击回调
                 	OnInfoWindowClickListener listener = new OnInfoWindowClickListener() {
                         public void onInfoWindowClick() {
@@ -122,7 +135,7 @@ public class StaticDemo extends Activity {
                      */
                     mInfoWindow = new InfoWindow(BitmapDescriptorFactory.fromView(textView), latLng, -47, listener);
                     mBaiduMap.showInfoWindow(mInfoWindow);//显示信息窗口
-                    
+
                 } else if (marker.getZIndex() == mMarkerB.getZIndex()) {//如果是终点图层
                 	Button button = new Button(getApplicationContext());
                     button.setText("终点");
@@ -141,7 +154,7 @@ public class StaticDemo extends Activity {
                      */
                     mInfoWindow = new InfoWindow(button, latLng, -47);
                     mBaiduMap.showInfoWindow(mInfoWindow);
-                } 
+                }
                 return true;
             }
         });
@@ -157,14 +170,8 @@ public class StaticDemo extends Activity {
 				return false;
 			}
 		});
-		/**
-		 * 将轨迹画出来，将轨迹标记为第3个。
-		 */
-		OverlayOptions ooPolyline = new PolylineOptions().width(13).color(0xAAFF0000).points(latLngs);
-		mPolyline = (Polyline) mBaiduMap.addOverlay(ooPolyline);
-		mPolyline.setZIndex(3);
 	}
-	
+
 	/**
 	 * 讲google地图的wgs84坐标转化为百度地图坐标，模拟了一堆点。
 	 */

@@ -1,4 +1,4 @@
-package com.shen.baidu.doglost.bean;
+package com.shen.baidu.doglost.model.domain;
 
 
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
@@ -11,11 +11,15 @@ import java.nio.ByteOrder;
  */
 public class PulseBean implements IPulseSendable {
 
-    private byte[] buffer = new byte[]{(byte) 0xFF, (byte)0xE2, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0D, 0x0A};
+    private byte[] buffer;
+
+    public PulseBean(byte[] temp) {
+        buffer = temp;
+    }
 
     @Override
     public byte[] parse() {
-        ByteBuffer bb = ByteBuffer.allocate(9);
+        ByteBuffer bb = ByteBuffer.allocate(10);
         bb.order(ByteOrder.BIG_ENDIAN);
         bb.put(buffer);
         return bb.array();

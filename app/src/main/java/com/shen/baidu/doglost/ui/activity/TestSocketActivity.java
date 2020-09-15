@@ -15,9 +15,9 @@ import android.widget.Toast;
 
 import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.adapter.LogAdapter;
-import com.shen.baidu.doglost.bean.LogBean;
-import com.shen.baidu.doglost.bean.MsgDataBean;
-import com.shen.baidu.doglost.bean.PulseBean;
+import com.shen.baidu.doglost.model.domain.LogBean;
+import com.shen.baidu.doglost.model.domain.MsgDataBean;
+import com.shen.baidu.doglost.model.domain.PulseBean;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
 import com.xuhao.didi.core.pojo.OriginalData;
@@ -34,6 +34,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 
 import static android.widget.Toast.LENGTH_SHORT;
+import static com.shen.baidu.doglost.utils.DataHandlerUtil.Crc16Sum;
 
 public class TestSocketActivity extends AppCompatActivity {
 
@@ -66,9 +67,15 @@ public class TestSocketActivity extends AppCompatActivity {
             /**
              * 开始发送心跳连接。
              */
-            String str = "心跳连接测试";
-            byte[] bytes = str.getBytes();
-            mManager.getPulseManager().setPulseSendable(new PulseBean()).pulse();
+
+            byte[] temp=new byte[]{(byte) 0xFF,(byte) 0xE2,0x05,0x00,0x00,0x00,0x00, 0x00, 0x0D, 0x0A};
+
+            temp[3]= 0x01;
+            int crc = Crc16Sum(temp, 6);
+            temp[6] = (byte) (crc >> 8);
+            temp[7] = (byte) crc;
+
+            mManager.getPulseManager().setPulseSendable(new PulseBean(temp)).pulse();
         }
 
         @Override
@@ -104,7 +111,7 @@ public class TestSocketActivity extends AppCompatActivity {
              * 喂狗
              */
             byte[] headBytes = data.getHeadBytes();
-            if (data.getHeadBytes()[0] == (byte) 0xFF && data.getHeadBytes()[1] == (byte) 0x0F) {
+            if (data.getHeadBytes()[0] == (byte) 0xFF && data.getHeadBytes()[1] == (byte) 0xE2) {
                 mManager.getPulseManager().feed();
             }
             /**
@@ -183,8 +190,8 @@ public class TestSocketActivity extends AppCompatActivity {
      */
     private void initManager() {
         final Handler handler = new Handler();
-        mIPET.setText("192.168.0.116");
-        mPortET.setText("6668");
+        mIPET.setText("60.166.106.91");
+        mPortET.setText("8233");
         mInfo = new ConnectionInfo(mIPET.getText().toString(), Integer.parseInt(mPortET.getText().toString()));
         mOkOptions = new OkSocketOptions.Builder()
                 .setReconnectionManager(new NoneReconnect())

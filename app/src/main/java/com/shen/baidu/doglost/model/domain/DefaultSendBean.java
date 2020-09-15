@@ -1,4 +1,4 @@
-package com.shen.baidu.doglost.bean;
+package com.shen.baidu.doglost.model.domain;
 
 
 import com.xuhao.didi.core.iocore.interfaces.ISendable;

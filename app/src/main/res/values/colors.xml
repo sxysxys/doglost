@@ -11,4 +11,8 @@
     <color name="sure_bg">#0084FE</color>
     <color name="white">#ffffffff</color>
     <color name="layout_title">#008EEF</color>
+    <color name="green">#00FF00</color>
+    <color name="black">#000000</color>
+    <color name="light_gray">#F8F8F8</color>
+    <color name="list_item_title">#333333</color>
 </resources>

@@ -67,4 +67,9 @@ public interface Const {
 
 	int REQUEST_CODE = 1;
 
+	// TODO：添加baseurl
+	String BASE_URL = "";
+
+	int deviceId = 1;
+
 }

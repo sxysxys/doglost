@@ -35,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.dyn)
     public Button dyn;
 
+    @BindView(R.id.history)
+    public Button hisButton;
+
     private SDKReceiver mReceiver;
     private Unbinder mBind;
 
@@ -117,6 +120,11 @@ public class MainActivity extends AppCompatActivity {
 
         socketButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, TestSocketActivity.class);
+            MainActivity.this.startActivity(intent);
+        });
+
+        hisButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
             MainActivity.this.startActivity(intent);
         });
     }

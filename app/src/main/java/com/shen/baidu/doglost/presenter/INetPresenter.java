@@ -1,12 +1,13 @@
 package com.shen.baidu.doglost.presenter;
 
-import com.shen.baidu.doglost.bean.MsgDataBean;
+import com.shen.baidu.doglost.base.IBasePresenter;
+import com.shen.baidu.doglost.model.domain.MsgDataBean;
 import com.shen.baidu.doglost.view.INetCallBack;
 
 /**
  * 提供数据
  */
-public interface INetPresenter {
+public interface INetPresenter extends IBasePresenter<INetCallBack> {
     /**
      * 调用连接。
      */
@@ -26,15 +27,5 @@ public interface INetPresenter {
      * 发送数据
      */
     void sendData(MsgDataBean dataBean);
-    /**
-     * 注册
-     * @param callBack
-     */
-    void registerCallback(INetCallBack callBack);
 
-    /**
-     * 取消注册
-     * @param callback
-     */
-    void unregisterCallback(INetCallBack callback);
 }

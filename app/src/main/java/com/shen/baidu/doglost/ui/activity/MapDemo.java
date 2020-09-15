@@ -11,9 +11,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.RadioGroup;
-import android.widget.RadioGroup.OnCheckedChangeListener;
-import android.widget.Toast;
+import android.widget.ImageView;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
@@ -27,20 +25,29 @@ import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationConfiguration.LocationMode;
 import com.baidu.mapapi.map.MyLocationData;
-import com.baidu.mapapi.map.Overlay;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolygonOptions;
-import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.map.Stroke;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.search.route.BikingRouteResult;
+import com.baidu.mapapi.search.route.DrivingRouteResult;
+import com.baidu.mapapi.search.route.IndoorRouteResult;
+import com.baidu.mapapi.search.route.MassTransitRouteResult;
+import com.baidu.mapapi.search.route.OnGetRoutePlanResultListener;
+import com.baidu.mapapi.search.route.PlanNode;
+import com.baidu.mapapi.search.route.RoutePlanSearch;
+import com.baidu.mapapi.search.route.TransitRouteResult;
+import com.baidu.mapapi.search.route.WalkingRoutePlanOption;
+import com.baidu.mapapi.search.route.WalkingRouteResult;
 import com.baidu.mapapi.utils.SpatialRelationUtil;
 import com.shen.baidu.doglost.DemoApplication;
 import com.shen.baidu.doglost.R;
-import com.shen.baidu.doglost.bean.DogCurrentInfo;
+import com.shen.baidu.doglost.model.domain.DogCurrentInfo;
 import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.constant.FenceShape;
 import com.shen.baidu.doglost.presenter.INetPresenter;
@@ -50,11 +57,10 @@ import com.shen.baidu.doglost.utils.BitmapUtil;
 import com.shen.baidu.doglost.utils.LogUtils;
 import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.INetCallBack;
+import com.shen.baidu.mapapi.overlayutil.WalkingRouteOverlay;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -62,11 +68,11 @@ import butterknife.ButterKnife;
 /**
  * 地图定位。
  */
-public class MapDemo extends Activity implements SensorEventListener, INetCallBack, BaiduMap.OnMapClickListener {
+public class MapDemo extends Activity implements SensorEventListener, INetCallBack, BaiduMap.OnMapClickListener, OnGetRoutePlanResultListener {
 
 	// 定位相关
 	LocationClient mLocClient;
-	public MyLocationListenner myListener = new MyLocationListenner();
+	public MyLocationListener myListener = new MyLocationListener();
 	private LocationMode mCurrentMode;
 	BitmapDescriptor mCurrentMarker;
 	private SensorManager mSensorManager;
@@ -96,6 +102,13 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@BindView(R.id.btn_clear)
 	Button clearButton;
 
+	@BindView(R.id.button_lock)
+	ImageView buttonLock;
+
+	@BindView(R.id.button_search)
+	Button buttonSearch;
+
+
 	private DemoApplication mApplication;
 
 
@@ -117,7 +130,11 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	private double radius = 0;
 
 	private boolean isDraw = false;
-	private boolean isInner = true;
+	private Marker curMarker;
+	private RoutePlanSearch mRouteSearch;
+//	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
+	private LatLng mCurDogPosition;
+	private WalkingRouteOverlay mSearchOverlay;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -137,8 +154,9 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	 */
 	private void initView() {
 		ButterKnife.bind(this);
+
 		mBaiduMap = mMapView.getMap();
-		requestLocButton.setText("普通");
+		requestLocButton.setText("普通模式");
 		// 开启定位图层
 		mBaiduMap.setMyLocationEnabled(true);
 	}
@@ -265,6 +283,26 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 				resetStatus();
 			}
 		};
+
+		/**
+		 * 设置路线导航事件
+		 */
+		buttonSearch.setOnClickListener(v -> {
+			if (!isOpen || mCurDogPosition == null) {
+				ToastUtils.showToast("未获取到狗数据，请稍后重试");
+				return;
+			}
+			if (mRouteSearch == null) {
+				mRouteSearch = RoutePlanSearch.newInstance();
+				mRouteSearch.setOnGetRoutePlanResultListener(MapDemo.this);
+			}
+			// 拿到此时的人的位置和狗的位置
+			PlanNode startNode = PlanNode.withLocation(new LatLng(mCurrentLat, mCurrentLon));
+			PlanNode endNode = PlanNode.withLocation(mCurDogPosition);
+			mRouteSearch.walkingSearch((new WalkingRoutePlanOption())
+					.from(startNode)
+					.to(endNode));
+		});
 	}
 
 	private void resetStatus() {
@@ -330,7 +368,6 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 					// 此处设置开发者获取到的方向信息，顺时针0-360
 					.direction(mCurrentDirection).latitude(mCurrentLat).longitude(mCurrentLon).build();
 			mBaiduMap.setMyLocationData(locData);
-			
 		}
 		lastX = x;
 	}
@@ -347,9 +384,48 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@Override
 	public void onNetDataLoaded(DogCurrentInfo dogInfo) {
 		LogUtils.d(this, "数据加载成功");
-		// TODO:先将狗的位置显示
+		// 先将狗的位置显示
+		float curDogLon = dogInfo.getLongitude();
+		float curDogLat = dogInfo.getLatitude();
+		showDog(curDogLon, curDogLat);
+		// 判断狗的位置，如果超出则报警
+		if (!isInner(curDogLat, curDogLon)) {
+			ToastUtils.showToast("狗过界了");
+		}
+		// TODO:判断狗的电量、状态信息
+		checkDogStatus(dogInfo);
+	}
 
-		// TODO:判断狗的位置，如果超出则报警
+
+
+	/**
+	 * 判断狗的状态信息，并进行相应的处理
+	 * @param dogInfo
+	 */
+	private void checkDogStatus(DogCurrentInfo dogInfo) {
+
+	}
+
+	/**
+	 * 显示狗的位置
+	 * @param longitude
+	 * @param latitude
+	 */
+	private void showDog(double longitude, double latitude) {
+		//定义Maker坐标点
+		mCurDogPosition = new LatLng(latitude, longitude);
+		//构建Marker图标
+		BitmapDescriptor bitmap = BitmapDescriptorFactory
+				.fromResource(R.mipmap.dog_64);
+		//构建MarkerOption，用于在地图上添加Marker
+		OverlayOptions option = new MarkerOptions()
+				.position(mCurDogPosition)
+				.icon(bitmap);
+		//在地图上添加Marker，并显示
+		if (curMarker != null) {
+			curMarker.remove();
+		}
+		curMarker = (Marker) mBaiduMap.addOverlay(option);
 	}
 
 	/**
@@ -366,7 +442,6 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@Override
 	public void onNetSuccess() {
 		ToastUtils.showToast("连接服务器成功");
-
 	}
 
 	/**
@@ -390,6 +465,11 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	 */
 	@Override
 	public void onConnectQuit() {
+
+	}
+
+	@Override
+	public void onDataEmpty() {
 
 	}
 
@@ -432,9 +512,28 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	}
 
 	/**
+	 * 步行路线的回调
+	 * @param walkingRouteResult
+	 */
+	@Override
+	public void onGetWalkingRouteResult(WalkingRouteResult walkingRouteResult) {
+		// 先将原来的路线移除
+		mSearchOverlay.removeFromMap();
+		// 添加新路线
+		mSearchOverlay = new WalkingRouteOverlay(mBaiduMap);
+		if (walkingRouteResult.getRouteLines().size() > 0) {
+			//获取路径规划数据,(以返回的第一条数据为例)
+			//为WalkingRouteOverlay实例设置路径数据
+			mSearchOverlay.setData(walkingRouteResult.getRouteLines().get(0));
+			//在地图上绘制WalkingRouteOverlay
+			mSearchOverlay.addToMap();
+		}
+	}
+
+	/**
 	 * 定位SDK监听函数，在设定时间来一次（1s）
 	 */
-	public class MyLocationListenner implements BDLocationListener {
+	public class MyLocationListener implements BDLocationListener {
 
 		@Override
 		public void onReceiveLocation(BDLocation location) {
@@ -449,6 +548,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 					// 此处设置开发者获取到的方向信息，顺时针0-360
 					.direction(mCurrentDirection).latitude(mCurrentLat).longitude(mCurrentLon).build();
 			mBaiduMap.setMyLocationData(locData);
+//			showDog(location.getLongitude(), location.getLatitude());
 			// 首次定位的时候，需要放大以观察位置。
 			if (isFirstLoc) {
 				isFirstLoc = false;
@@ -456,26 +556,31 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 				MapStatus.Builder builder = new MapStatus.Builder();
 				builder.target(ll).zoom(18.0f);
 				mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+//				showDog(mCurDogPosition.longitude, mCurDogPosition.latitude);
 			}
 
 			/**
 			 * 自己测试，判断是否超出边界
 			 */
 			if (isDraw) {
-				LatLng curLatLng = new LatLng(mCurrentLat, mCurrentLon);
-				if (fenceShape == FenceShape.circle) {
-					isInner = SpatialRelationUtil.isCircleContainsPoint(circleCenter, (int) radius, curLatLng);
-				}
-				if (fenceShape == FenceShape.polygon) {
-					isInner = SpatialRelationUtil.isPolygonContainsPoint(mapVertexes, curLatLng);
-				}
-				if (!isInner) {
-					ToastUtils.showToast("出界了!");
+				if (isInner(mCurrentLat,mCurrentLon)) {
+					ToastUtils.showToast("出界了");
 				}
 			}
-
 		}
 
+	}
+
+	private boolean isInner(double mCurrentLat, double mCurrentLon) {
+		LatLng curLatLng = new LatLng(mCurrentLat, mCurrentLon);
+		boolean isInner = true;
+		if (fenceShape == FenceShape.circle) {
+			isInner = SpatialRelationUtil.isCircleContainsPoint(circleCenter, (int) radius, curLatLng);
+		}
+		if (fenceShape == FenceShape.polygon) {
+			isInner = SpatialRelationUtil.isPolygonContainsPoint(mapVertexes, curLatLng);
+		}
+		return isInner;
 	}
 
 	@Override
@@ -511,6 +616,31 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 		mMapView = null;
 		presenter.unregisterCallback(this);
 		super.onDestroy();
+	}
+
+	@Override
+	public void onGetTransitRouteResult(TransitRouteResult transitRouteResult) {
+
+	}
+
+	@Override
+	public void onGetMassTransitRouteResult(MassTransitRouteResult massTransitRouteResult) {
+
+	}
+
+	@Override
+	public void onGetDrivingRouteResult(DrivingRouteResult drivingRouteResult) {
+
+	}
+
+	@Override
+	public void onGetIndoorRouteResult(IndoorRouteResult indoorRouteResult) {
+
+	}
+
+	@Override
+	public void onGetBikingRouteResult(BikingRouteResult bikingRouteResult) {
+
 	}
 
 }

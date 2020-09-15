@@ -1,4 +1,4 @@
-package com.shen.baidu.doglost.bean;
+package com.shen.baidu.doglost.model.domain;
 
 /**
  * 记录小狗此时的信息

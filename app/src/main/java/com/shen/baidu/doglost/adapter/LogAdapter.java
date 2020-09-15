@@ -14,7 +14,7 @@ import android.widget.Toast;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.shen.baidu.doglost.R;
-import com.shen.baidu.doglost.bean.LogBean;
+import com.shen.baidu.doglost.model.domain.LogBean;
 
 import java.util.ArrayList;
 import java.util.List;

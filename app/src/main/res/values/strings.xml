@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BaiduMapApi</string>
+    <string name="app_name">宠物狗防丢</string>
     <string name="btn_open_search">开启寻狗</string>
     <string name="btn_close_search">关闭寻狗</string>
     <string name="title_text">围栏设置</string>
@@ -14,4 +14,11 @@
     <string name="sure">确定</string>
     <string name="create_circle">创建圆形围栏</string>
     <string name="fence_create_polygon">创建多边形围栏</string>
+    <string name="route_search">路线导航</string>
+    <string name="trace_search">轨迹查询</string>
+    <string name="search_time">查询时间设置</string>
+    <string name="text_trace_search">轨迹查询</string>
+    <string name="all_cancel">取消</string>
+    <string name="all_sure">确定</string>
+    <string name="start_stop_time">起止时间</string>
 </resources>
