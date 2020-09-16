@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -13,10 +14,13 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.baidu.mapapi.SDKInitializer;
+import com.shen.baidu.doglost.DemoApplication;
 import com.shen.baidu.doglost.R;
+import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.model.domain.ResponseLogin;
 import com.shen.baidu.doglost.presenter.ILoginPresenter;
 import com.shen.baidu.doglost.presenter.impl.LoginPresenterImpl;
+import com.shen.baidu.doglost.utils.PassWordUtil;
 import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.ILoginInfoCallback;
 
@@ -37,6 +41,7 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
     private LoginActivity.SDKReceiver mReceiver;
 
     private ILoginPresenter mLoginPresenter;
+    private SharedPreferences mSharedPreferences;
 
     /**
      * 构造广播监听类，监听 SDK key 验证以及网络异常广播
@@ -109,12 +114,15 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
     @Override
     public void onNetDataLoaded(ResponseLogin data) {
         if (data.getCode() == 200) {
+            // 此时说明已经验证通过，将用户的用户名和密码保存起来。
+            PassWordUtil.getInstance().save(loginName.getText().toString(), loginPassWord.getText().toString());
             // 此时执行跳转
             skipMain();
         } else if (data.getCode() == 400){
             ToastUtils.showToast("用户名或密码不正确");
         }
     }
+
 
     /**
      * 执行跳转

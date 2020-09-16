@@ -48,7 +48,7 @@
                             android:background="@mipmap/bg_btn_cancel"
                             android:onClick="onStartTime"
                             android:textColor="@color/layout_title"
-                            android:textSize="10dp"></Button>
+                            android:textSize="10dp"/>
 
 
                     <Button
@@ -60,7 +60,7 @@
                             android:background="@mipmap/bg_btn_cancel"
                             android:onClick="onEndTime"
                             android:textColor="@color/layout_title"
-                            android:textSize="10dp"></Button>
+                            android:textSize="10dp"/>
 
 
                 </LinearLayout>

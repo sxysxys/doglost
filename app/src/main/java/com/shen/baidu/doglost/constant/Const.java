@@ -72,4 +72,6 @@ public interface Const {
 
 	int deviceId = 1;
 
+	String USER_INFO = "user_name_password";
+
 }

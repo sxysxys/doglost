@@ -56,6 +56,7 @@ import com.shen.baidu.doglost.model.domain.SendBean;
 import com.shen.baidu.doglost.presenter.INetPresenter;
 import com.shen.baidu.doglost.presenter.impl.NetPresenterImpl;
 import com.shen.baidu.doglost.ui.dialog.FenceCreateDialog;
+import com.shen.baidu.doglost.ui.dialog.PassWordDialog;
 import com.shen.baidu.doglost.utils.BitmapUtil;
 import com.shen.baidu.doglost.utils.DataHandlerUtil;
 import com.shen.baidu.doglost.utils.LogUtils;
@@ -154,6 +155,8 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 //	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
 	private LatLng mCurDogPosition;
 	private WalkingRouteOverlay mSearchOverlay;
+	private PassWordDialog.Callback mPassWordCallback;
+	private PassWordDialog mPassWordDialog;
 
 
 	@Override
@@ -326,6 +329,20 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 					.to(endNode));
 		});
 
+		mPassWordCallback = new PassWordDialog.Callback() {
+			@Override
+			public void onSureCallback() {
+				ToastUtils.showToast("密码验证成功，正在开锁...");
+				// 发送相应的消息
+				mFlag = (byte) (mFlag ^ 1);
+				sendData();
+			}
+
+			@Override
+			public void onWrongCallback() {
+				ToastUtils.showToast("密码错误，一键锁失败");
+			}
+		};
 
 
 	}
@@ -563,16 +580,23 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.lock_btn:
-				// 一键上锁
-				mFlag = (byte) (mFlag ^ 1);
+				// 先输入密码判断
+				if (mPassWordDialog == null) {
+					mPassWordDialog = new PassWordDialog(this, mPassWordCallback);
+				}
+				mPassWordDialog.show();
 				break;
 			case R.id.button_light:
 				// 开关灯
 				mFlag = (byte) (mFlag ^ 2);
+				sendData();
 				break;
 			default:
 				break;
 		}
+	}
+
+	private void sendData() {
 		// 将数据发出
 		if (mNetPresenter != null) {
 			byte[] bytes = handleSendData();
