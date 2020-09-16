@@ -1,5 +1,8 @@
 package com.shen.baidu.doglost.model.domain;
 
+/**
+ * 登录验证
+ */
 public class ResponseLogin {
 
     /**

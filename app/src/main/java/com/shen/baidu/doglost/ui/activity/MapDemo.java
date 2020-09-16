@@ -11,7 +11,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
@@ -50,10 +52,12 @@ import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.model.domain.DogCurrentInfo;
 import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.constant.FenceShape;
+import com.shen.baidu.doglost.model.domain.SendBean;
 import com.shen.baidu.doglost.presenter.INetPresenter;
 import com.shen.baidu.doglost.presenter.impl.NetPresenterImpl;
 import com.shen.baidu.doglost.ui.dialog.FenceCreateDialog;
 import com.shen.baidu.doglost.utils.BitmapUtil;
+import com.shen.baidu.doglost.utils.DataHandlerUtil;
 import com.shen.baidu.doglost.utils.LogUtils;
 import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.INetCallBack;
@@ -65,10 +69,12 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static com.shen.baidu.doglost.utils.DataHandlerUtil.Crc16Sum;
+
 /**
  * 地图定位。
  */
-public class MapDemo extends Activity implements SensorEventListener, INetCallBack, BaiduMap.OnMapClickListener, OnGetRoutePlanResultListener {
+public class MapDemo extends Activity implements SensorEventListener, INetCallBack, BaiduMap.OnMapClickListener, OnGetRoutePlanResultListener, OnClickListener {
 
 	// 定位相关
 	LocationClient mLocClient;
@@ -84,6 +90,8 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 
 	boolean isFirstStart = true;
 	boolean isOpen = false;
+
+	boolean isLightOn = false;
 
 	BaiduMap mBaiduMap;
 
@@ -102,11 +110,22 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@BindView(R.id.btn_clear)
 	Button clearButton;
 
-	@BindView(R.id.button_lock)
-	ImageView buttonLock;
+//	@BindView(R.id.button_lock)
+//	ImageView buttonLock;
 
 	@BindView(R.id.button_search)
 	Button buttonSearch;
+
+	@BindView(R.id.button_light)
+	CheckBox lightButton;
+
+	@BindView(R.id.lock_btn)
+	LinearLayout buttonLock;
+
+	/**
+	 * 一键上锁和开关灯的标志位
+	 */
+	byte mFlag = 0b00000000;
 
 
 	private DemoApplication mApplication;
@@ -116,7 +135,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	private MyLocationData locData;
 	private float direction;
 
-	private INetPresenter presenter;
+	private INetPresenter mNetPresenter;
 	private FenceShape fenceShape = FenceShape.circle;
 	private int mVertexesNumber;
 	// 设置圆形坐标的原点
@@ -135,6 +154,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 //	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
 	private LatLng mCurDogPosition;
 	private WalkingRouteOverlay mSearchOverlay;
+
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -162,11 +182,13 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	}
 
 	private void initPresenter() {
-		presenter = NetPresenterImpl.getInstance();
-		presenter.registerCallback(this);
+		mNetPresenter = NetPresenterImpl.getInstance();
+		mNetPresenter.registerCallback(this);
 	}
 
 	private void initListener() {
+		lightButton.setOnClickListener(this);
+		buttonLock.setOnClickListener(this);
 		requestLocButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				switch (mCurrentMode) {
@@ -215,17 +237,17 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 		});
 
 		searchButton.setOnClickListener(v -> {
-			if (presenter != null) {
+			if (mNetPresenter != null) {
 				if (isOpen) {
-					presenter.delConnect();
+					mNetPresenter.delConnect();
 					isOpen = false;
 					searchButton.setText("打开寻狗");
 				} else {
 					if (isFirstStart) {
-						presenter.firstConnect();
+						mNetPresenter.firstConnect();
 						isFirstStart = false;
 					} else {
-						presenter.connect();
+						mNetPresenter.connect();
 					}
 					searchButton.setText("关闭寻狗");
 					isOpen = true;
@@ -303,6 +325,9 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 					.from(startNode)
 					.to(endNode));
 		});
+
+
+
 	}
 
 	private void resetStatus() {
@@ -531,6 +556,43 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	}
 
 	/**
+	 * 一键上锁和开关灯的回调
+	 * @param v
+	 */
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()) {
+			case R.id.lock_btn:
+				// 一键上锁
+				mFlag = (byte) (mFlag ^ 1);
+				break;
+			case R.id.button_light:
+				// 开关灯
+				mFlag = (byte) (mFlag ^ 2);
+				break;
+			default:
+				break;
+		}
+		// 将数据发出
+		if (mNetPresenter != null) {
+			byte[] bytes = handleSendData();
+			mNetPresenter.sendData(new SendBean(bytes));
+		}
+	}
+
+	/**
+	 * 处理发送的数据
+	 */
+	private byte[] handleSendData() {
+		byte[] temp=new byte[]{(byte) 0xFF,(byte) 0xE2, 0x05,
+				Const.deviceId, mFlag, 0x00, 0x00, 0x00, 0x0D, 0x0A};
+		int crc = Crc16Sum(temp, 6);
+		temp[6] = (byte) (crc >> 8);
+		temp[7] = (byte) crc;
+		return temp;
+	}
+
+	/**
 	 * 定位SDK监听函数，在设定时间来一次（1s）
 	 */
 	public class MyLocationListener implements BDLocationListener {
@@ -545,7 +607,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 			mCurrentLon = location.getLongitude();
 			mCurrentAccracy = location.getRadius();
 			locData = new MyLocationData.Builder().accuracy(location.getRadius())
-					// 此处设置开发者获取到的方向信息，顺时针0-360
+					// 此处设置开发者获取 到的方向信息，顺时针0-360
 					.direction(mCurrentDirection).latitude(mCurrentLat).longitude(mCurrentLon).build();
 			mBaiduMap.setMyLocationData(locData);
 //			showDog(location.getLongitude(), location.getLatitude());
@@ -563,7 +625,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 			 * 自己测试，判断是否超出边界
 			 */
 			if (isDraw) {
-				if (isInner(mCurrentLat,mCurrentLon)) {
+				if (!isInner(mCurrentLat,mCurrentLon)) {
 					ToastUtils.showToast("出界了");
 				}
 			}
@@ -582,6 +644,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 		}
 		return isInner;
 	}
+
 
 	@Override
 	protected void onPause() {
@@ -614,7 +677,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 		mBaiduMap.setMyLocationEnabled(false);
 		mMapView.onDestroy();
 		mMapView = null;
-		presenter.unregisterCallback(this);
+		mNetPresenter.unregisterCallback(this);
 		super.onDestroy();
 	}
 

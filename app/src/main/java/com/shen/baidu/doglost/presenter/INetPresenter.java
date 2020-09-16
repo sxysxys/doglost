@@ -1,7 +1,7 @@
 package com.shen.baidu.doglost.presenter;
 
 import com.shen.baidu.doglost.base.IBasePresenter;
-import com.shen.baidu.doglost.model.domain.MsgDataBean;
+import com.shen.baidu.doglost.model.domain.SendBean;
 import com.shen.baidu.doglost.view.INetCallBack;
 
 /**
@@ -26,6 +26,6 @@ public interface INetPresenter extends IBasePresenter<INetCallBack> {
     /**
      * 发送数据
      */
-    void sendData(MsgDataBean dataBean);
+    void sendData(SendBean dataBean);
 
 }

@@ -17,7 +17,7 @@ import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.adapter.LogAdapter;
 import com.shen.baidu.doglost.model.domain.LogBean;
 import com.shen.baidu.doglost.model.domain.MsgDataBean;
-import com.shen.baidu.doglost.model.domain.PulseBean;
+import com.shen.baidu.doglost.model.domain.SendBean;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
 import com.xuhao.didi.core.pojo.OriginalData;
@@ -75,7 +75,7 @@ public class TestSocketActivity extends AppCompatActivity {
             temp[6] = (byte) (crc >> 8);
             temp[7] = (byte) crc;
 
-            mManager.getPulseManager().setPulseSendable(new PulseBean(temp)).pulse();
+            mManager.getPulseManager().setPulseSendable(new SendBean(temp)).pulse();
         }
 
         @Override

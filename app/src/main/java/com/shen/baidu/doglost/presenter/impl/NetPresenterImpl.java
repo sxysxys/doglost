@@ -6,12 +6,12 @@ import android.os.Message;
 import androidx.annotation.NonNull;
 
 import com.shen.baidu.doglost.model.domain.DogCurrentInfo;
-import com.shen.baidu.doglost.model.domain.MsgDataBean;
-import com.shen.baidu.doglost.model.domain.PulseBean;
+import com.shen.baidu.doglost.model.domain.SendBean;
 import com.shen.baidu.doglost.constant.INetParams;
 import com.shen.baidu.doglost.presenter.INetPresenter;
 import com.shen.baidu.doglost.utils.DataHandlerUtil;
 import com.shen.baidu.doglost.utils.LogUtils;
+import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.INetCallBack;
 import com.xuhao.didi.core.iocore.interfaces.IPulseSendable;
 import com.xuhao.didi.core.iocore.interfaces.ISendable;
@@ -116,9 +116,13 @@ public class NetPresenterImpl implements INetPresenter {
      * @param dataBean
      */
     @Override
-    public void sendData(MsgDataBean dataBean) {
+    public void sendData(SendBean dataBean) {
         if (mManager != null) {
-            mManager.send(dataBean);
+            if (mManager.isConnect()) {
+                mManager.send(dataBean);
+            } else {
+                ToastUtils.showToast("请先开启小狗定位!");
+            }
         }
     }
 
@@ -190,7 +194,7 @@ public class NetPresenterImpl implements INetPresenter {
              * 开启心跳
              */
             byte[] temp = getTempBytes();
-            mManager.getPulseManager().setPulseSendable(new PulseBean(temp)).pulse();
+            mManager.getPulseManager().setPulseSendable(new SendBean(temp)).pulse();
             if (netCallBack != null) {
                 netCallBack.onNetSuccess();
             }
@@ -284,7 +288,7 @@ public class NetPresenterImpl implements INetPresenter {
     };
 
     /**
-     * 拿到心跳数据
+     * 发送心跳数据
      * @return
      */
     private byte[] getTempBytes() {

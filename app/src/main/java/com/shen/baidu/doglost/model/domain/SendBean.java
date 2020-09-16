@@ -9,11 +9,11 @@ import java.nio.ByteOrder;
 /**
  * app给服务器发送心跳包的帧格式
  */
-public class PulseBean implements IPulseSendable {
+public class SendBean implements IPulseSendable {
 
     private byte[] buffer;
 
-    public PulseBean(byte[] temp) {
+    public SendBean(byte[] temp) {
         buffer = temp;
     }
 
