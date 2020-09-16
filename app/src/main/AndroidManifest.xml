@@ -24,7 +24,8 @@
         android:theme="@style/AppTheme">
         <activity android:name=".ui.activity.TestSocketActivity" />
         <activity android:name=".ui.activity.CreateFenceOptions" />
-        <activity android:name=".ui.activity.MainActivity">
+        <activity android:name=".ui.activity.MainActivity" />
+        <activity android:name=".ui.activity.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -52,6 +53,7 @@
             android:configChanges="orientation|keyboardHidden"
             android:screenOrientation="portrait" />
 
+<!--        配置访问百度sdk的密钥-->
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="QgURpemhrZXLQ4hCuWupFLPnd6aHiOiE" />
