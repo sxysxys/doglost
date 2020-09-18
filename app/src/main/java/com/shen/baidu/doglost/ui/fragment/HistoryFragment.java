@@ -1,9 +1,14 @@
-package com.shen.baidu.doglost.ui.activity;
+package com.shen.baidu.doglost.ui.fragment;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
@@ -18,7 +23,9 @@ import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.Polyline;
 import com.baidu.mapapi.map.PolylineOptions;
+import com.baidu.mapapi.map.TextureMapView;
 import com.baidu.mapapi.model.LatLng;
+import com.shen.baidu.doglost.DemoApplication;
 import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.model.domain.HistoryPoint;
@@ -36,16 +43,19 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
-public class HistoryActivity extends Fragment implements IHistoryCallback {
+public class HistoryFragment extends Fragment implements IHistoryCallback {
 
     private IHistoryPresenter mHistoryTracePresenter;
     private Unbinder mBind;
 
     @BindView(R.id.track_query_mapView)
-    MapView mBaiduView;
+    TextureMapView mBaiduView;
 
-    @BindView(R.id.tv_options)
-    TextView mSearchTimeOption;
+    @BindView(R.id.btn_create)
+    Button buttonQuery;
+
+    @BindView(R.id.btn_clear)
+    Button buttonClear;
 
     private BaiduMap mBaiduMap;
 
@@ -65,18 +75,20 @@ public class HistoryActivity extends Fragment implements IHistoryCallback {
     private Marker mMarkerB;
     private Polyline mPolyline;
 
-
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_history);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.activity_history, container, false);
+        mBind = ButterKnife.bind(this, view);
         initView();
         initPresenter();
         initListener();
+        return view;
     }
 
     private void initView() {
-        mBind = ButterKnife.bind(this, );
+        buttonQuery.setText("查询轨迹");
+        buttonClear.setText("清除轨迹");
         mBaiduMap = mBaiduView.getMap();
         // 开启定位图层。
         mBaiduMap.setMyLocationEnabled(true);
@@ -103,9 +115,9 @@ public class HistoryActivity extends Fragment implements IHistoryCallback {
         };
 
         // 点击后开启dialog，回调相应的数据
-        mSearchTimeOption.setOnClickListener(v -> {
+        buttonQuery.setOnClickListener(v -> {
             if (mSelectTimeDialog == null) {
-                mSelectTimeDialog = new SelectTimeDialog(HistoryActivity.this, mSelectTimeCallback);
+                mSelectTimeDialog = new SelectTimeDialog(getContext(), mSelectTimeCallback);
             }
             mSelectTimeDialog.show();
         });
@@ -199,28 +211,29 @@ public class HistoryActivity extends Fragment implements IHistoryCallback {
         LogUtils.d(this, "连接成功...");
     }
 
-    /**
-     * 返回键的事件
-     * @param view
-     */
-    public void onBack(View view) {
-        super.onBackPressed();
-    }
+//    /**
+//     * 返回键的事件
+//     * @param view
+//     */
+//    public void onBack(View view) {
+//        super.onBackPressed();
+//    }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         mBaiduView.onPause();
         super.onPause();
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         mBaiduView.onResume();
         super.onResume();
         // 为系统的方向传感器注册监听器
     }
+
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         // 退出时销毁定位
         // 关闭定位图层
         mBaiduMap.setMyLocationEnabled(false);

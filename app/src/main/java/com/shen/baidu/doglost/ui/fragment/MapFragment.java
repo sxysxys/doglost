@@ -1,7 +1,7 @@
-package com.shen.baidu.doglost.ui.activity;
+package com.shen.baidu.doglost.ui.fragment;
 
-import android.app.Activity;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -10,14 +10,19 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
@@ -31,7 +36,6 @@ import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
-import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
@@ -40,6 +44,7 @@ import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolygonOptions;
 import com.baidu.mapapi.map.Stroke;
+import com.baidu.mapapi.map.TextureMapView;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.search.route.BikingRouteResult;
 import com.baidu.mapapi.search.route.DrivingRouteResult;
@@ -59,6 +64,7 @@ import com.shen.baidu.doglost.constant.FenceShape;
 import com.shen.baidu.doglost.model.domain.DogCurrentInfo;
 import com.shen.baidu.doglost.presenter.INetPresenter;
 import com.shen.baidu.doglost.presenter.impl.NetPresenterImpl;
+import com.shen.baidu.doglost.ui.activity.CreateFenceOptions;
 import com.shen.baidu.doglost.ui.dialog.FenceCreateDialog;
 import com.shen.baidu.doglost.ui.dialog.PassWordDialog;
 import com.shen.baidu.doglost.utils.BitmapUtil;
@@ -73,10 +79,12 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static android.content.Context.SENSOR_SERVICE;
+
 /**
  * 地图定位。
  */
-public class MapDemo extends Activity implements SensorEventListener,
+public class MapFragment extends Fragment implements SensorEventListener,
 		INetCallBack, BaiduMap.OnMapClickListener,
 		OnGetRoutePlanResultListener, OnClickListener {
 
@@ -97,7 +105,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 	BaiduMap mBaiduMap;
 
 	@BindView(R.id.bmapView)
-	MapView mMapView;
+	TextureMapView mMapView;
 
 	@BindView(R.id.button1)
 	Button requestLocButton;
@@ -122,7 +130,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 
 
 
-	private DemoApplication mApplication;
+	private Context mApplication;
 
 
 
@@ -167,26 +175,26 @@ public class MapDemo extends Activity implements SensorEventListener,
 	private Vibrator vibrator;
 
 
+	@Nullable
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_map);
-		mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);// 获取传感器管理服务
-		vibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);  // 获取震动服务
+	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+		View inflate = inflater.inflate(R.layout.activity_map, container, false);
+		mApplication = DemoApplication.getContext();
+		mSensorManager = (SensorManager) mApplication.getSystemService(SENSOR_SERVICE);// 获取传感器管理服务
+		vibrator = (Vibrator) mApplication.getSystemService(Service.VIBRATOR_SERVICE);  // 获取震动服务
 		mCurrentMode = LocationMode.NORMAL;
-		mApplication = (DemoApplication) getApplication();
+		ButterKnife.bind(this, inflate);
 		initView();
 		initListener();
 		initLocation();
 		initPresenter();
+		return inflate;
 	}
 
 	/**
 	 * 初始化视图
 	 */
 	private void initView() {
-		ButterKnife.bind(this);
-
 		mBaiduMap = mMapView.getMap();
 		requestLocButton.setText("普通模式");
 		// 开启定位图层
@@ -274,7 +282,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 			@Override
 			public void onClick(View v) {
 				if (!isDraw) {
-					Intent intent = new Intent(MapDemo.this,CreateFenceOptions.class);
+					Intent intent = new Intent(mApplication, CreateFenceOptions.class);
 					startActivityForResult(intent, Const.REQUEST_CODE);
 				} else {
 					ToastUtils.showToast("请先清空围栏");
@@ -293,7 +301,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 
 			@Override
 			public void onSureCallback(double radius) {
-				MapDemo.this.radius = radius;
+				MapFragment.this.radius = radius;
 
 				OverlayOptions overlayOptions = null;
 
@@ -328,7 +336,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 			}
 			if (mRouteSearch == null) {
 				mRouteSearch = RoutePlanSearch.newInstance();
-				mRouteSearch.setOnGetRoutePlanResultListener(MapDemo.this);
+				mRouteSearch.setOnGetRoutePlanResultListener(MapFragment.this);
 			}
 			// 拿到此时的人的位置和狗的位置
 			PlanNode startNode = PlanNode.withLocation(new LatLng(mCurrentLat, mCurrentLon));
@@ -374,7 +382,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 	 * @param data
 	 */
 	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (data == null) {
 			return;
 		}
@@ -395,7 +403,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 	 */
 	private void initLocation() {
 		// 定位初始化
-		mLocClient = new LocationClient(this);
+		mLocClient = new LocationClient(mApplication);
 		mLocClient.registerLocationListener(myListener);
 		LocationClientOption option = new LocationClientOption();
 		option.setOpenGps(true); // 打开gps
@@ -493,9 +501,9 @@ public class MapDemo extends Activity implements SensorEventListener,
 		// 此时如果
 		if (batteryVal <= 5 && !is5show) {
 			//TODO:震动
-
+			vibrator.vibrate(2000);
 			// show
-			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
 			builder.setTitle("电量报警").setMessage("小狗电量小于5%，请及时充电!").show();
 			is5show = true;
 			return;
@@ -505,7 +513,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 			}
 		}
 		if (batteryVal <= 20 && !is20show) {
-			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
 			builder.setTitle("电量报警").setMessage("小狗电量小于20%!").show();
 			is20show = true;
 			return;
@@ -515,7 +523,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 			}
 		}
 		if (batteryVal <= 40 && !is40show) {
-			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
 			builder.setTitle("电量报警").setMessage("小狗电量小于40%").show();
 			is40show = true;
 		} else {
@@ -557,7 +565,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 	private void showWindow(DogCurrentInfo info) {
 		mBaiduMap.hideInfoWindow();
 		//用来构造InfoWindow的Button
-		View view = View.inflate(this, R.layout.view_layout_text, null);
+		View view = View.inflate(mApplication, R.layout.view_layout_text, null);
 		TextView batteryText = view.findViewById(R.id.battery_text);
 		TextView lonText = view.findViewById(R.id.lon_text);
 		TextView latText = view.findViewById(R.id.lat_text);
@@ -640,7 +648,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 		}
 
 		if (null == fenceCreateDialog) {
-			fenceCreateDialog = new FenceCreateDialog(this, createCallback);
+			fenceCreateDialog = new FenceCreateDialog(getContext(), createCallback);
 		}
 		if (FenceShape.circle == fenceShape || vertexIndex == mVertexesNumber) {
 			//定点数相同或者是画圆，就弹出框设置。
@@ -685,7 +693,7 @@ public class MapDemo extends Activity implements SensorEventListener,
 			case R.id.lock_btn:
 				// 先输入密码判断
 				if (mPassWordDialog == null) {
-					mPassWordDialog = new PassWordDialog(this, mPassWordCallback);
+					mPassWordDialog = new PassWordDialog(getContext(), mPassWordCallback);
 				}
 				mPassWordDialog.show();
 				break;
@@ -753,13 +761,13 @@ public class MapDemo extends Activity implements SensorEventListener,
 
 
 	@Override
-	protected void onPause() {
+	public void onPause() {
 		mMapView.onPause();
 		super.onPause();
 	}
 
 	@Override
-	protected void onResume() {
+	public void onResume() {
 		mMapView.onResume();
 		super.onResume();
 		// 为系统的方向传感器注册监听器
@@ -768,14 +776,14 @@ public class MapDemo extends Activity implements SensorEventListener,
 	}
 
 	@Override
-	protected void onStop() {
+	public void onStop() {
 		// 取消注册传感器监听
 		mSensorManager.unregisterListener(this);
 		super.onStop();
 	}
 
 	@Override
-	protected void onDestroy() {
+	public void onDestroy() {
 		// 退出时销毁定位
 		mLocClient.unRegisterLocationListener(myListener);
 		mLocClient.stop();

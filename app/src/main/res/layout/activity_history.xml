@@ -5,17 +5,19 @@
     android:layout_height="match_parent">
 
 
-    <include layout="@layout/activity_top"></include>
+<!--    <include layout="@layout/activity_top"></include>-->
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.baidu.mapapi.map.MapView
+        <com.baidu.mapapi.map.TextureMapView
             android:id="@+id/track_query_mapView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:clickable="true"/>
+
+        <include layout="@layout/layout_activity_buttom"></include>
 
     </RelativeLayout>
 

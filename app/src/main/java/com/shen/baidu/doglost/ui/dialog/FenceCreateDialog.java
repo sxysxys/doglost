@@ -2,6 +2,7 @@ package com.shen.baidu.doglost.ui.dialog;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -36,7 +37,7 @@ public class FenceCreateDialog extends Dialog implements View.OnClickListener {
      */
     private double radius = 100;
 
-    public FenceCreateDialog(Activity activity, Callback callback) {
+    public FenceCreateDialog(Context activity, Callback callback) {
         super(activity, android.R.style.Theme_Holo_Light_Dialog);
         this.callback = callback;
     }

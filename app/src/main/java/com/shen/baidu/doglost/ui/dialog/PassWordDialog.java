@@ -1,7 +1,7 @@
 package com.shen.baidu.doglost.ui.dialog;
 
-import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -33,7 +33,7 @@ public class PassWordDialog extends Dialog implements View.OnClickListener  {
     @BindView(R.id.button_sure)
     Button sureButton;
 
-    public PassWordDialog(Activity activity, PassWordDialog.Callback callback) {
+    public PassWordDialog(Context activity, PassWordDialog.Callback callback) {
         super(activity, android.R.style.Theme_Holo_Light_Dialog);
         mCallback = callback;
     }
@@ -48,6 +48,8 @@ public class PassWordDialog extends Dialog implements View.OnClickListener  {
         cancelButton.setOnClickListener(this);
         sureButton.setOnClickListener(this);
     }
+
+
 
     /**
      * 每次调用show的时候执行

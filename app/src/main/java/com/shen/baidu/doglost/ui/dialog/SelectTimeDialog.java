@@ -2,6 +2,7 @@ package com.shen.baidu.doglost.ui.dialog;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.View;
@@ -42,7 +43,7 @@ public class SelectTimeDialog extends Dialog implements View.OnClickListener  {
 
     private int tag = 0;
 
-    public SelectTimeDialog(Activity activity, SelectTimeDialog.Callback callback) {
+    public SelectTimeDialog(Context activity, SelectTimeDialog.Callback callback) {
         super(activity, android.R.style.Theme_Holo_Light_Dialog);
         mCallback = callback;
     }

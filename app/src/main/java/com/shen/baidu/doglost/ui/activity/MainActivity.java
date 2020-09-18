@@ -1,16 +1,14 @@
 package com.shen.baidu.doglost.ui.activity;
 
-import android.Manifest;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.shen.baidu.doglost.R;
+import com.shen.baidu.doglost.ui.fragment.HistoryFragment;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -69,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, MapDemo.class);
+                Intent intent = new Intent(MainActivity.this, MapActivity.class);
                 MainActivity.this.startActivity(intent);
             }
         });
@@ -103,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         hisButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
+            Intent intent = new Intent(MainActivity.this, HistoryFragment.class);
             MainActivity.this.startActivity(intent);
         });
     }

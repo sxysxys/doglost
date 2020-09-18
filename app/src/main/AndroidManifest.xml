@@ -40,11 +40,11 @@
             android:configChanges="orientation|keyboardHidden"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".ui.activity.HistoryActivity"
+            android:name=".ui.fragment.HistoryFragment"
             android:configChanges="orientation|keyboardHidden"
             android:screenOrientation="portrait" />
         <activity
-            android:name=".ui.activity.MapDemo"
+            android:name=".ui.fragment.MapFragment"
             android:configChanges="orientation|keyboardHidden"
             android:screenOrientation="portrait" />
         <activity
