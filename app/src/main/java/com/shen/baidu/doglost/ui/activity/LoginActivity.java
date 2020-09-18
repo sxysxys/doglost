@@ -1,16 +1,21 @@
 package com.shen.baidu.doglost.ui.activity;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.baidu.mapapi.SDKInitializer;
@@ -20,6 +25,7 @@ import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.model.domain.ResponseLogin;
 import com.shen.baidu.doglost.presenter.ILoginPresenter;
 import com.shen.baidu.doglost.presenter.impl.LoginPresenterImpl;
+import com.shen.baidu.doglost.utils.LogUtils;
 import com.shen.baidu.doglost.utils.PassWordUtil;
 import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.ILoginInfoCallback;
@@ -27,6 +33,10 @@ import com.shen.baidu.doglost.view.ILoginInfoCallback;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static android.Manifest.permission.READ_PHONE_STATE;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+
+@RequiresApi(api = Build.VERSION_CODES.M)
 public class LoginActivity extends AppCompatActivity implements ILoginInfoCallback {
 
     @BindView(R.id.btn_login)
@@ -42,6 +52,7 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
 
     private ILoginPresenter mLoginPresenter;
     private SharedPreferences mSharedPreferences;
+    private static final int PERMISSION_RESULT_CODE = 1;
 
     /**
      * 构造广播监听类，监听 SDK key 验证以及网络异常广播
@@ -65,11 +76,49 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        // 申请权限
+        int sdkInt = Build.VERSION.SDK_INT;
+        // 拿到的是机子本地的sdk版本
+        if (sdkInt > Build.VERSION_CODES.M) {
+            checkPermission();
+        }
         initView();
         // apikey的授权需要一定的时间，在授权成功之前地图相关操作会出现异常；apikey授权成功后会发送广播通知，我们这里注册 SDK 广播监听者
         initReceiver();
         initListener();
         initPresenter();
+    }
+
+    /**
+     * 验证权限
+     */
+    private void checkPermission() {
+        // 请求定位权限
+        int gps = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+        int wifi = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+        int offLine = checkSelfPermission(READ_PHONE_STATE);
+        if (gps != PERMISSION_GRANTED || wifi != PERMISSION_GRANTED || offLine != PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.READ_PHONE_STATE},PERMISSION_RESULT_CODE);
+        }
+    }
+
+    /**
+     * 请求权限的回调
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_RESULT_CODE && grantResults.length == 3 && grantResults[0] == PERMISSION_GRANTED
+                && grantResults[1] == PERMISSION_GRANTED && grantResults[2] == PERMISSION_GRANTED) {
+            LogUtils.d(this,"开启了定位和通话权限");
+        } else {
+            finish();
+        }
+
     }
 
     private void initReceiver() {

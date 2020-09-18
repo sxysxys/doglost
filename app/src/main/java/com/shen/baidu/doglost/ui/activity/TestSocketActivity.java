@@ -75,7 +75,7 @@ public class TestSocketActivity extends AppCompatActivity {
             temp[6] = (byte) (crc >> 8);
             temp[7] = (byte) crc;
 
-            mManager.getPulseManager().setPulseSendable(new SendBean(temp)).pulse();
+            mManager.getPulseManager().setPulseSendable(SendBean.getInstance()).pulse();
         }
 
         @Override

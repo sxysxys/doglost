@@ -28,4 +28,10 @@ public interface INetPresenter extends IBasePresenter<INetCallBack> {
      */
     void sendData(SendBean dataBean);
 
+    // 拿到全局的标志位
+    byte getmFlag();
+
+    // 设置全局标志位
+    void setmFlag(byte mFlag);
+
 }

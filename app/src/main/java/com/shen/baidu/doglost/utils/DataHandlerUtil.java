@@ -28,11 +28,21 @@ public class DataHandlerUtil {
 
     public static float getFloat(byte[] bytes)
     {
-        return Float.intBitsToFloat(getInt(bytes));
+//        return Float.intBitsToFloat(getInt(bytes));
+        int l;
+        l = bytes[0];
+        l &= 0xff;
+        l |= ((long) bytes[1] << 8);
+        l &= 0xffff;
+        l |= ((long) bytes[2] << 16);
+        l &= 0xffffff;
+        l |= ((long) bytes[3] << 24);
+        return Float.intBitsToFloat(l);
+
     }
 
-    private static int getInt(byte[] bytes)
-    {
-        return (0xff & bytes[0]) | (0xff00 & (bytes[1] << 8)) | (0xff0000 & (bytes[2] << 16)) | (0xff000000 & (bytes[3] << 24));
-    }
+//    private static int getInt(byte[] bytes)
+//    {
+//        return (0xff & bytes[0]) | (0xff00 & (bytes[1] << 8)) | (0xff0000 & (bytes[2] << 16)) | (0xff000000 & (bytes[3] << 24));
+//    }
 }

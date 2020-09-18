@@ -11,40 +11,59 @@
         android:clickable="true" />
 
 
-
-    <Button
-        android:id="@+id/button_open"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:background="@color/gray"
-        android:textColor="@color/white"
-        android:text="@string/btn_open_search"
-        android:layout_alignParentTop="true"
-        android:layout_marginLeft="25dp"
-        android:layout_marginTop="10dip" />
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        android:weightSum="1">
 
-    <Button
-        android:id="@+id/button_search"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@color/gray"
-        android:textColor="@color/white"
-        android:text="@string/route_search"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dip" />
+        <Button
+            android:id="@+id/button_open"
+            android:layout_width="0dp"
+            android:layout_weight="0.25"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="5dp"
+            android:layout_height="wrap_content"
+            android:background="@color/gray"
+            android:textColor="@color/white"
+            android:text="@string/btn_open_search" />
 
-    <Button
-        android:id="@+id/button1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@color/gray"
-        android:textColor="@color/white"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginRight="25dp"
-        android:layout_marginTop="10dip" />
+        <Button
+            android:id="@+id/button_search"
+            android:layout_width="0dp"
+            android:layout_weight="0.25"
+            android:layout_height="wrap_content"
+            android:background="@color/gray"
+            android:layout_marginRight="5dp"
+            android:layout_marginLeft="5dp"
+            android:textColor="@color/white"
+            android:text="@string/route_search" />
+
+        <Button
+            android:id="@+id/button_history"
+            android:layout_width="0dp"
+            android:layout_weight="0.25"
+            android:layout_height="wrap_content"
+            android:background="@color/gray"
+            android:textColor="@color/white"
+            android:layout_marginRight="5dp"
+            android:layout_marginLeft="5dp"
+            android:text="@string/history_search_text" />
+
+        <Button
+            android:id="@+id/button1"
+            android:layout_width="0dp"
+            android:layout_marginLeft="5dp"
+            android:layout_weight="0.25"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
+            android:text="@string/model_text"
+            android:background="@color/gray"
+            android:textColor="@color/white" />
+
+    </LinearLayout>
+
 
     <LinearLayout
         android:id="@+id/lock_btn"
@@ -71,6 +90,7 @@
             android:text="一键上锁"
             android:textColor="@color/black"
             />
+
     </LinearLayout>
 
 

@@ -72,6 +72,8 @@ public interface Const {
 
 	int deviceId = 1;
 
+	int sendLength = 5;
+
 	String USER_INFO = "user_name_password";
 
 }

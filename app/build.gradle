@@ -53,5 +53,7 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile files('libs/baidumapapi_map_v4_3_1.jar')
-//    compile files('libs/bos-android-sdk-1.0.2.jar')
+
+    // 添加的fragment切换依赖
+    compile 'com.flyco.tablayout:FlycoTabLayout_Lib:2.1.2@aar'
 }

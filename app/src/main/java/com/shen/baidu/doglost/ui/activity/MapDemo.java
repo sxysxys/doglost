@@ -1,6 +1,7 @@
 package com.shen.baidu.doglost.ui.activity;
 
 import android.app.Activity;
+import android.app.Service;
 import android.content.Intent;
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -8,12 +9,15 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AlertDialog;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
@@ -23,6 +27,7 @@ import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.CircleOptions;
+import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
@@ -49,16 +54,14 @@ import com.baidu.mapapi.search.route.WalkingRouteResult;
 import com.baidu.mapapi.utils.SpatialRelationUtil;
 import com.shen.baidu.doglost.DemoApplication;
 import com.shen.baidu.doglost.R;
-import com.shen.baidu.doglost.model.domain.DogCurrentInfo;
 import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.constant.FenceShape;
-import com.shen.baidu.doglost.model.domain.SendBean;
+import com.shen.baidu.doglost.model.domain.DogCurrentInfo;
 import com.shen.baidu.doglost.presenter.INetPresenter;
 import com.shen.baidu.doglost.presenter.impl.NetPresenterImpl;
 import com.shen.baidu.doglost.ui.dialog.FenceCreateDialog;
 import com.shen.baidu.doglost.ui.dialog.PassWordDialog;
 import com.shen.baidu.doglost.utils.BitmapUtil;
-import com.shen.baidu.doglost.utils.DataHandlerUtil;
 import com.shen.baidu.doglost.utils.LogUtils;
 import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.INetCallBack;
@@ -70,12 +73,12 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-import static com.shen.baidu.doglost.utils.DataHandlerUtil.Crc16Sum;
-
 /**
  * 地图定位。
  */
-public class MapDemo extends Activity implements SensorEventListener, INetCallBack, BaiduMap.OnMapClickListener, OnGetRoutePlanResultListener, OnClickListener {
+public class MapDemo extends Activity implements SensorEventListener,
+		INetCallBack, BaiduMap.OnMapClickListener,
+		OnGetRoutePlanResultListener, OnClickListener {
 
 	// 定位相关
 	LocationClient mLocClient;
@@ -89,10 +92,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	private double mCurrentLon = 0.0;
 	private float mCurrentAccracy;
 
-	boolean isFirstStart = true;
-	boolean isOpen = false;
 
-	boolean isLightOn = false;
 
 	BaiduMap mBaiduMap;
 
@@ -111,9 +111,6 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@BindView(R.id.btn_clear)
 	Button clearButton;
 
-//	@BindView(R.id.button_lock)
-//	ImageView buttonLock;
-
 	@BindView(R.id.button_search)
 	Button buttonSearch;
 
@@ -123,16 +120,12 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@BindView(R.id.lock_btn)
 	LinearLayout buttonLock;
 
-	/**
-	 * 一键上锁和开关灯的标志位
-	 */
-	byte mFlag = 0b00000000;
 
 
 	private DemoApplication mApplication;
 
 
-	boolean isFirstLoc = true; // 是否首次定位
+
 	private MyLocationData locData;
 	private float direction;
 
@@ -149,7 +142,6 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	private FenceCreateDialog.Callback createCallback;
 	private double radius = 0;
 
-	private boolean isDraw = false;
 	private Marker curMarker;
 	private RoutePlanSearch mRouteSearch;
 //	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
@@ -158,12 +150,29 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	private PassWordDialog.Callback mPassWordCallback;
 	private PassWordDialog mPassWordDialog;
 
+	/**
+	 * 一些判断标志位
+	 */
+	private boolean isFirstOut = true;  // 出去
+	private boolean isDraw = false;  // 是否画了圈
+	private boolean isFirstStart = true; // 是否是第一次开始寻狗
+	private boolean isOpen = false;  // 是否连上了服务器
+	private boolean is40show = false;  // 40的电量是否展示过了
+	private boolean is20show = false;
+	private boolean is5show = false;
+	private boolean buttonUI = true;  //开启寻狗和关闭寻狗ui
+	boolean isFirstLoc = true; // 是否首次定位
+
+	private InfoWindow mInfoWindow;
+	private Vibrator vibrator;
+
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_map);
 		mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);// 获取传感器管理服务
+		vibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);  // 获取震动服务
 		mCurrentMode = LocationMode.NORMAL;
 		mApplication = (DemoApplication) getApplication();
 		initView();
@@ -241,10 +250,10 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 
 		searchButton.setOnClickListener(v -> {
 			if (mNetPresenter != null) {
-				if (isOpen) {
+				if (isOpen || !buttonUI) {
 					mNetPresenter.delConnect();
-					isOpen = false;
 					searchButton.setText("打开寻狗");
+					buttonUI = true;
 				} else {
 					if (isFirstStart) {
 						mNetPresenter.firstConnect();
@@ -253,7 +262,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 						mNetPresenter.connect();
 					}
 					searchButton.setText("关闭寻狗");
-					isOpen = true;
+					buttonUI = false;
 				}
 			}
 		});
@@ -276,6 +285,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 		clearButton.setOnClickListener(v -> {
 			resetStatus();
 		});
+
 		/**
 		*   创建围栏的回调，也就是将图形在图中画出来或者取消。
 		*/
@@ -295,7 +305,6 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 							.stroke(new Stroke(mapVertexes.size(), Color.rgb(0xFF, 0x06, 0x01)))
 							.fillColor(0x30FFFFFF);
 				}
-
 				// 把图画出来
 				mBaiduMap.addOverlay(overlayOptions);
 				isDraw = true;
@@ -334,8 +343,11 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 			public void onSureCallback() {
 				ToastUtils.showToast("密码验证成功，正在开锁...");
 				// 发送相应的消息
-				mFlag = (byte) (mFlag ^ 1);
-				sendData();
+				try {
+					reverseInAndOutStatus(1);
+				} catch (Exception e) {
+					ToastUtils.showToast("未连接上服务器，请先使用小狗定位功能!");
+				}
 			}
 
 			@Override
@@ -429,15 +441,38 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 		// 先将狗的位置显示
 		float curDogLon = dogInfo.getLongitude();
 		float curDogLat = dogInfo.getLatitude();
-		showDog(curDogLon, curDogLat);
+		showDogAndStatus(dogInfo);
 		// 判断狗的位置，如果超出则报警
-		if (!isInner(curDogLat, curDogLon)) {
-			ToastUtils.showToast("狗过界了");
+		if (isDraw) {
+			if (!isInner(curDogLat, curDogLon)) {
+				ToastUtils.showToast("狗过界了");
+				if (isFirstOut) {
+					// 震动
+					vibrator.vibrate(2000);
+					reverseInAndOutStatus(4);
+					isFirstOut = false;
+				}
+			} else {
+				// 如果狗出去又进去
+				if (!isFirstOut) {
+					reverseInAndOutStatus(4);
+					isFirstOut = true;
+				}
+			}
 		}
 		// TODO:判断狗的电量、状态信息
 		checkDogStatus(dogInfo);
 	}
 
+	/**
+	 * 将相应的位翻转
+	 * @param i
+	 */
+	private void reverseInAndOutStatus(int i) {
+		byte flag = mNetPresenter.getmFlag();
+		flag = (byte) (flag ^ i);
+		mNetPresenter.setmFlag(flag);
+	}
 
 
 	/**
@@ -445,16 +480,58 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	 * @param dogInfo
 	 */
 	private void checkDogStatus(DogCurrentInfo dogInfo) {
-
+		// 判断电池状态
+		handleBattery(dogInfo.getBattery());
+		// TODO:判断其他的小狗状态
 	}
 
 	/**
-	 * 显示狗的位置
-	 * @param longitude
-	 * @param latitude
+	 * 当电池电量过低，进入这里
+	 * @param batteryVal
 	 */
-	private void showDog(double longitude, double latitude) {
+	private void handleBattery(int batteryVal) {
+		// 此时如果
+		if (batteryVal <= 5 && !is5show) {
+			//TODO:震动
+
+			// show
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("电量报警").setMessage("小狗电量小于5%，请及时充电!").show();
+			is5show = true;
+			return;
+		} else {
+			if (batteryVal > 5) {
+				is5show = false;
+			}
+		}
+		if (batteryVal <= 20 && !is20show) {
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("电量报警").setMessage("小狗电量小于20%!").show();
+			is20show = true;
+			return;
+		} else {
+			if (batteryVal > 20) {
+				is20show = false;
+			}
+		}
+		if (batteryVal <= 40 && !is40show) {
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("电量报警").setMessage("小狗电量小于40%").show();
+			is40show = true;
+		} else {
+			if (batteryVal > 40) {
+				is40show = false;
+			}
+		}
+	}
+
+	/**
+	 * 显示狗的位置和状态
+	 */
+	private void showDogAndStatus(DogCurrentInfo info) {
 		//定义Maker坐标点
+		float latitude = info.getLatitude();
+		float longitude = info.getLongitude();
 		mCurDogPosition = new LatLng(latitude, longitude);
 		//构建Marker图标
 		BitmapDescriptor bitmap = BitmapDescriptorFactory
@@ -463,11 +540,33 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 		OverlayOptions option = new MarkerOptions()
 				.position(mCurDogPosition)
 				.icon(bitmap);
+
 		//在地图上添加Marker，并显示
 		if (curMarker != null) {
 			curMarker.remove();
 		}
 		curMarker = (Marker) mBaiduMap.addOverlay(option);
+
+		showWindow(info);
+	}
+
+	/**
+	 * 显示window
+	 * @param info
+	 */
+	private void showWindow(DogCurrentInfo info) {
+		mBaiduMap.hideInfoWindow();
+		//用来构造InfoWindow的Button
+		View view = View.inflate(this, R.layout.view_layout_text, null);
+		TextView batteryText = view.findViewById(R.id.battery_text);
+		TextView lonText = view.findViewById(R.id.lon_text);
+		TextView latText = view.findViewById(R.id.lat_text);
+		batteryText.setText(String.format(this.getString(R.string.battery_text), info.getBattery()));
+		lonText.setText(String.format(this.getString(R.string.lon_text), info.getLongitude()));
+		latText.setText(String.format(this.getString(R.string.lat_text), info.getLatitude()));
+		view.setBackgroundResource(R.drawable.popup);
+		mInfoWindow = new InfoWindow(view, mCurDogPosition, -100);
+		mBaiduMap.showInfoWindow(mInfoWindow);
 	}
 
 	/**
@@ -475,6 +574,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	 */
 	@Override
 	public void onNetError() {
+		isOpen = false;
 		ToastUtils.showToast("网络错误，未能连接上服务器");
 	}
 
@@ -484,6 +584,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@Override
 	public void onNetSuccess() {
 		ToastUtils.showToast("连接服务器成功");
+		isOpen = true;
 	}
 
 	/**
@@ -507,7 +608,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	 */
 	@Override
 	public void onConnectQuit() {
-
+		isOpen = false;
 	}
 
 	@Override
@@ -560,7 +661,9 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 	@Override
 	public void onGetWalkingRouteResult(WalkingRouteResult walkingRouteResult) {
 		// 先将原来的路线移除
-		mSearchOverlay.removeFromMap();
+		if (mSearchOverlay != null) {
+			mSearchOverlay.removeFromMap();
+		}
 		// 添加新路线
 		mSearchOverlay = new WalkingRouteOverlay(mBaiduMap);
 		if (walkingRouteResult.getRouteLines().size() > 0) {
@@ -588,32 +691,15 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 				break;
 			case R.id.button_light:
 				// 开关灯
-				mFlag = (byte) (mFlag ^ 2);
-				sendData();
+				try {
+					reverseInAndOutStatus(2);
+				} catch (Exception e) {
+					ToastUtils.showToast("未连接上服务器，请先开启小狗定位再使用");
+				}
 				break;
 			default:
 				break;
 		}
-	}
-
-	private void sendData() {
-		// 将数据发出
-		if (mNetPresenter != null) {
-			byte[] bytes = handleSendData();
-			mNetPresenter.sendData(new SendBean(bytes));
-		}
-	}
-
-	/**
-	 * 处理发送的数据
-	 */
-	private byte[] handleSendData() {
-		byte[] temp=new byte[]{(byte) 0xFF,(byte) 0xE2, 0x05,
-				Const.deviceId, mFlag, 0x00, 0x00, 0x00, 0x0D, 0x0A};
-		int crc = Crc16Sum(temp, 6);
-		temp[6] = (byte) (crc >> 8);
-		temp[7] = (byte) crc;
-		return temp;
 	}
 
 	/**
@@ -634,7 +720,7 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 					// 此处设置开发者获取 到的方向信息，顺时针0-360
 					.direction(mCurrentDirection).latitude(mCurrentLat).longitude(mCurrentLon).build();
 			mBaiduMap.setMyLocationData(locData);
-//			showDog(location.getLongitude(), location.getLatitude());
+			showDogAndStatus(new DogCurrentInfo.Builder().lon((float) mCurrentLon).lat((float) mCurrentLat).build());
 			// 首次定位的时候，需要放大以观察位置。
 			if (isFirstLoc) {
 				isFirstLoc = false;
@@ -642,21 +728,17 @@ public class MapDemo extends Activity implements SensorEventListener, INetCallBa
 				MapStatus.Builder builder = new MapStatus.Builder();
 				builder.target(ll).zoom(18.0f);
 				mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
-//				showDog(mCurDogPosition.longitude, mCurDogPosition.latitude);
-			}
-
-			/**
-			 * 自己测试，判断是否超出边界
-			 */
-			if (isDraw) {
-				if (!isInner(mCurrentLat,mCurrentLon)) {
-					ToastUtils.showToast("出界了");
-				}
 			}
 		}
 
 	}
 
+	/**
+	 * 判断是否在内部
+	 * @param mCurrentLat
+	 * @param mCurrentLon
+	 * @return
+	 */
 	private boolean isInner(double mCurrentLat, double mCurrentLon) {
 		LatLng curLatLng = new LatLng(mCurrentLat, mCurrentLon);
 		boolean isInner = true;

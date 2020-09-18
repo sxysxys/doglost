@@ -11,6 +11,7 @@ import android.widget.EditText;
 
 import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.utils.PassWordUtil;
+import com.shen.baidu.doglost.utils.ToastUtils;
 
 
 import butterknife.BindView;
@@ -54,6 +55,7 @@ public class PassWordDialog extends Dialog implements View.OnClickListener  {
     @Override
     protected void onStart() {
         super.onStart();
+        textPassword.setText("");
     }
 
     @Override
@@ -64,10 +66,12 @@ public class PassWordDialog extends Dialog implements View.OnClickListener  {
                 break;
             case R.id.button_sure:
                 // 判断此时的密码是否正确
-                if (textPassword.getText().toString() == "") {
+                String s = textPassword.getText().toString();
+                if (s.equals("")) {
+                    ToastUtils.showToast("请输入密码!");
                     return;
                 }
-                if (PassWordUtil.getInstance().isPassWordRight(textPassword.getText().toString())) {
+                if (PassWordUtil.getInstance().isPassWordRight(s)) {
                     mCallback.onSureCallback();
                 } else {
                     mCallback.onWrongCallback();

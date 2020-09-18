@@ -5,6 +5,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
@@ -35,7 +36,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
-public class HistoryActivity extends AppCompatActivity implements IHistoryCallback {
+public class HistoryActivity extends Fragment implements IHistoryCallback {
 
     private IHistoryPresenter mHistoryTracePresenter;
     private Unbinder mBind;
@@ -75,7 +76,7 @@ public class HistoryActivity extends AppCompatActivity implements IHistoryCallba
     }
 
     private void initView() {
-        mBind = ButterKnife.bind(this);
+        mBind = ButterKnife.bind(this, );
         mBaiduMap = mBaiduView.getMap();
         // 开启定位图层。
         mBaiduMap.setMyLocationEnabled(true);

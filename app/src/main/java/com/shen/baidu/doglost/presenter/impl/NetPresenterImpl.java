@@ -52,6 +52,31 @@ public class NetPresenterImpl implements INetPresenter {
 
     private boolean isNeedStart = true;
 
+//    /**
+//     * 发送的那个标志位
+//     */
+//    private byte mFlag = 0b00000000;
+
+    /**
+     * 成功连上了，才会有这个。
+     */
+    private SendBean mSendData;
+
+    @Override
+    public byte getmFlag() {
+        if (mSendData != null) {
+            return mSendData.getMFlag();
+        } else {
+            throw new RuntimeException();
+        }
+    }
+
+    @Override
+    public void setmFlag(byte mFlag) {
+        if (mSendData != null) {
+            mSendData.setMFlag(mFlag);
+        }
+    }
 
     private NetPresenterImpl() {}
 
@@ -193,8 +218,8 @@ public class NetPresenterImpl implements INetPresenter {
             /**
              * 开启心跳
              */
-            byte[] temp = getTempBytes();
-            mManager.getPulseManager().setPulseSendable(new SendBean(temp)).pulse();
+            mSendData = SendBean.getInstance();
+            mManager.getPulseManager().setPulseSendable(mSendData).pulse();
             if (netCallBack != null) {
                 netCallBack.onNetSuccess();
             }
@@ -202,12 +227,15 @@ public class NetPresenterImpl implements INetPresenter {
 
         @Override
         public void onSocketDisconnection(ConnectionInfo info, String action, Exception e) {
+            // 异常断开，可能没有及时喂狗等。
             if (e != null) {
                 LogUtils.w(NetPresenterImpl.this, "异常断开");
                 if (netCallBack != null) {
                     netCallBack.onNetError();
                 }
-            } else {
+            }
+            // 正常断开，使用disconnect来断开。
+            else {
                 LogUtils.d(NetPresenterImpl.this, "正常断开");
                 if (netCallBack != null) {
                     netCallBack.onConnectQuit();
@@ -247,11 +275,11 @@ public class NetPresenterImpl implements INetPresenter {
                 int crc16Sum = Crc16Sum(buf, buf.length - 2);
                 byte crcL = (byte) (crc16Sum & 0xFFFF);
                 byte crcH = (byte) ((crc16Sum & 0xFFFF) >> 8);
-                if (crcH == (byte) (buf[13] & 0xFF) && crcL ==(byte)(buf[14] & 0xFF)) {
+                if (crcH == (byte) (buf[15] & 0xFF) && crcL ==(byte)(buf[16] & 0xFF)) {
                     // TODO 将数据封装
                     // 经度
-                    byte[] lon = new byte[]{buf[4],buf[5],buf[6],buf[7]};
-                    byte[] lat = new byte[]{buf[8],buf[9],buf[10],buf[11]};
+                    byte[] lon = new byte[]{buf[7],buf[6],buf[5],buf[4]};
+                    byte[] lat = new byte[]{buf[11],buf[10],buf[9],buf[8]};
                     float lonfloat = DataHandlerUtil.getFloat(lon);
                     float latfloat = DataHandlerUtil.getFloat(lat);
                     // 纬度
@@ -287,18 +315,18 @@ public class NetPresenterImpl implements INetPresenter {
         }
     };
 
-    /**
-     * 发送心跳数据
-     * @return
-     */
-    private byte[] getTempBytes() {
-        byte[] temp=new byte[]{(byte) 0xFF,(byte) 0xE2,0x05,0x00,0x00,0x00,0x00, 0x00, 0x0D, 0x0A};
-        temp[3]= 0x01;
-        int crc = Crc16Sum(temp, 6);
-        temp[6] = (byte) (crc >> 8);
-        temp[7] = (byte) crc;
-        return temp;
-    }
+//    /**
+//     * 发送心跳数据
+//     * @return
+//     */
+//    private byte[] getTempBytes() {
+//        byte[] temp=new byte[]{(byte) 0xFF,(byte) 0xE2,0x05,0x00,0x00,0x00,0x00, 0x00, 0x0D, 0x0A};
+//        temp[3]= 0x01;
+//        int crc = Crc16Sum(temp, 6);
+//        temp[6] = (byte) (crc >> 8);
+//        temp[7] = (byte) crc;
+//        return temp;
+//    }
 
     public static <T> byte[] concat(byte[] first, byte[] second) {
         byte[] result = Arrays.copyOf(first, first.length + second.length);
