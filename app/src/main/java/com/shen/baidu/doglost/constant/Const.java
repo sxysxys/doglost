@@ -3,9 +3,9 @@ package com.shen.baidu.doglost.constant;
 /**
  * 随便定义的一些点，用来测试历史轨迹查询的。
  */
-public interface Const {
+public class Const {
 
-	String[] googleWGS84 = {
+	public static String[] googleWGS84 = {
 
 			"39.881970,116.456218", "39.88192466666667,116.45621083333334", "39.88187933333334,116.45620366666667",
 			"39.881834,116.4561965", "39.881788666666665,116.45618933333334", "39.88174333333333,116.45618216666666",
@@ -63,17 +63,17 @@ public interface Const {
 			"39.883434875000006,116.46075575", "39.883480250000005,116.4607475",
 			"39.883525625000004,116.46073924999999", "39.883571,116.460731" };
 
-	int RESULT_CODE = 1;
+	public static int RESULT_CODE = 1;
 
-	int REQUEST_CODE = 1;
+	public static int REQUEST_CODE = 1;
 
 	// TODO：添加baseurl
-	String BASE_URL = "";
+	public static String BASE_URL = "http://123.56.175.1:8017/dog/system/";
 
-	int deviceId = 1;
+	public static int deviceId = 1;
 
-	int sendLength = 5;
+	public static int sendLength = 5;
 
-	String USER_INFO = "user_name_password";
+	public static String USER_INFO = "user_name_password";
 
 }

@@ -99,4 +99,9 @@ public class MapActivity extends AppCompatActivity {
             mBind.unbind();
         }
     }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+    }
 }

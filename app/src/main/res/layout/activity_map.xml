@@ -12,52 +12,43 @@
 
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_marginTop="10dp"
+        android:layout_marginLeft="5dp"
+        android:layout_centerVertical="true"
         android:weightSum="1">
 
         <Button
             android:id="@+id/button_open"
-            android:layout_width="0dp"
-            android:layout_weight="0.25"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="5dp"
-            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_width="60dp"
+            android:layout_weight="0.33"
+            android:layout_height="0dp"
             android:background="@color/gray"
             android:textColor="@color/white"
             android:text="@string/btn_open_search" />
 
         <Button
+            android:layout_marginBottom="5dp"
+            android:layout_marginTop="5dp"
             android:id="@+id/button_search"
-            android:layout_width="0dp"
-            android:layout_weight="0.25"
-            android:layout_height="wrap_content"
+            android:layout_width="60dp"
+            android:layout_weight="0.33"
+            android:layout_height="0dp"
             android:background="@color/gray"
-            android:layout_marginRight="5dp"
-            android:layout_marginLeft="5dp"
             android:textColor="@color/white"
             android:text="@string/route_search" />
 
         <Button
-            android:id="@+id/button_history"
-            android:layout_width="0dp"
-            android:layout_weight="0.25"
-            android:layout_height="wrap_content"
-            android:background="@color/gray"
-            android:textColor="@color/white"
-            android:layout_marginRight="5dp"
-            android:layout_marginLeft="5dp"
-            android:text="@string/history_search_text" />
-
-        <Button
             android:id="@+id/button1"
-            android:layout_width="0dp"
-            android:layout_marginLeft="5dp"
-            android:layout_weight="0.25"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="10dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_width="60dp"
+            android:layout_weight="0.33"
+            android:layout_height="0dp"
             android:text="@string/model_text"
             android:background="@color/gray"
             android:textColor="@color/white" />
@@ -95,7 +86,19 @@
 
 
 
-    <CheckBox
+<!--    <CheckBox-->
+<!--        android:id="@+id/button_light"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_above="@+id/layout_tracing_bottom"-->
+<!--        android:layout_alignParentRight="true"-->
+<!--        android:layout_marginRight="10dp"-->
+<!--        android:layout_marginBottom="40dp"-->
+<!--        android:button="@drawable/light_selector"-->
+<!--        android:padding="3dp"-->
+<!--        />    -->
+
+    <ImageView
         android:id="@+id/button_light"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -103,7 +106,7 @@
         android:layout_alignParentRight="true"
         android:layout_marginRight="10dp"
         android:layout_marginBottom="40dp"
-        android:button="@drawable/light_selector"
+        android:src="@drawable/light_dark"
         android:padding="3dp"
         />
 

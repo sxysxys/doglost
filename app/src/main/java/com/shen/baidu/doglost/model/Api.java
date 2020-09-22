@@ -19,7 +19,7 @@ public interface Api {
      * @param endTime
      * @return
      */
-    @GET("userApp/validated")
+    @GET("device/record")
     Call<HistoryPoint> getSearchResult(@Query("deviceId") int deviceId,
                                        @Query("startTime") String startTime,
                                        @Query("endTime") String endTime);
@@ -30,7 +30,7 @@ public interface Api {
      * @param loginPwd
      * @return
      */
-    @GET("device/record")
+    @GET("userApp/validated")
     Call<ResponseLogin> login(@Query("loginName") String loginName,
                               @Query("loginPwd") String loginPwd);
 

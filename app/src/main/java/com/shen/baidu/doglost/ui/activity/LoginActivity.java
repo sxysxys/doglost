@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -19,7 +18,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.baidu.mapapi.SDKInitializer;
-import com.shen.baidu.doglost.DemoApplication;
 import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.model.domain.ResponseLogin;
@@ -83,7 +81,7 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
             checkPermission();
         }
         initView();
-        // apikey的授权需要一定的时间，在授权成功之前地图相关操作会出现异常；apikey授权成功后会发送广播通知，我们这里注册 SDK 广播监听者
+        // api key的授权需要一定的时间，在授权成功之前地图相关操作会出现异常；api key授权成功后会发送广播通知，我们这里注册 SDK 广播监听者
         initReceiver();
         initListener();
         initPresenter();
@@ -144,9 +142,9 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
                 ToastUtils.showToast("请输入登录信息!");
                 return;
             }
-            skipMain();
+//            skipMain();
             // 发起请求
-//            mLoginPresenter.loginRequest(loginText, loginPassWord);
+            mLoginPresenter.loginRequest(loginText, loginPassWord);
         });
     }
 
@@ -165,6 +163,8 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
         if (data.getCode() == 200) {
             // 此时说明已经验证通过，将用户的用户名和密码保存起来。
             PassWordUtil.getInstance().save(loginName.getText().toString(), loginPassWord.getText().toString());
+            // 此时确定账号密码了
+            Const.deviceId = Integer.parseInt(loginName.getText().toString().substring(3,6));
             // 此时执行跳转
             skipMain();
         } else if (data.getCode() == 400){
@@ -177,7 +177,7 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
      * 执行跳转
      */
     private void skipMain() {
-        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, MapActivity.class);
         startActivity(intent);
         ToastUtils.showToast("登录成功");
     }
@@ -197,7 +197,7 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
 
     @Override
     public void loading() {
-
+        LogUtils.d(this, "正在请求登录");
     }
 
     @Override

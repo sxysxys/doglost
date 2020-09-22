@@ -121,14 +121,22 @@ public class HistoryFragment extends Fragment implements IHistoryCallback {
             }
             mSelectTimeDialog.show();
         });
+
+        buttonClear.setOnClickListener(v -> {
+            clearTrack();
+        });
     }
 
     private void clearTrack() {
         mBaiduMap.clear();
         target = null;
-        mPolyline.remove();
-        mMarkerA.remove();
-        mMarkerB.remove();
+        if (mPolyline != null) {
+            mPolyline.remove();
+        }
+        if (mMarkerA != null && mMarkerB != null) {
+            mMarkerA.remove();
+            mMarkerB.remove();
+        }
         latLngs.clear();
     }
 
@@ -158,7 +166,7 @@ public class HistoryFragment extends Fragment implements IHistoryCallback {
             latSum += latitude;
             lanSum += longitude;
         }
-        target = new LatLng(lanSum / latLngs.size(), latSum / latLngs.size());
+        target = new LatLng(latSum / latLngs.size(), lanSum / latLngs.size());
     }
 
     /**

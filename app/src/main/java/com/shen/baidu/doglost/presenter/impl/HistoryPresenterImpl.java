@@ -7,7 +7,9 @@ import com.shen.baidu.doglost.presenter.IHistoryPresenter;
 import com.shen.baidu.doglost.utils.RetrofitManager;
 import com.shen.baidu.doglost.view.IHistoryCallback;
 
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -85,7 +87,16 @@ public class HistoryPresenterImpl implements IHistoryPresenter {
     private Call<HistoryPoint> getCall(String startTime, String endTime) {
         Retrofit retrofit = RetrofitManager.getInstance().getRetrofit();
         Api api = retrofit.create(Api.class);
-        return api.getSearchResult(Const.deviceId, startTime, endTime);
+
+        Call<HistoryPoint> searchResult = null;
+//        try {
+//            String st = URLEncoder.encode(startTime, "UTF-8");
+//            String endTime1 = URLEncoder.encode(endTime, "UTF-8");
+            searchResult = api.getSearchResult(Const.deviceId, startTime, endTime);
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
+        return searchResult;
     }
 
     @Override

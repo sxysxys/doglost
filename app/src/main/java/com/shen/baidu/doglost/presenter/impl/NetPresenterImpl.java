@@ -64,7 +64,7 @@ public class NetPresenterImpl implements INetPresenter {
 
     @Override
     public byte getmFlag() {
-        if (mSendData != null) {
+        if (mSendData != null && mManager.isConnect()) {
             return mSendData.getMFlag();
         } else {
             throw new RuntimeException();
@@ -73,7 +73,7 @@ public class NetPresenterImpl implements INetPresenter {
 
     @Override
     public void setmFlag(byte mFlag) {
-        if (mSendData != null) {
+        if (mSendData != null && mManager.isConnect()) {
             mSendData.setMFlag(mFlag);
         }
     }

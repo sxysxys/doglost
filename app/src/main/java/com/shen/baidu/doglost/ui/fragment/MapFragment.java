@@ -16,6 +16,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -54,6 +55,7 @@ import com.baidu.mapapi.search.route.OnGetRoutePlanResultListener;
 import com.baidu.mapapi.search.route.PlanNode;
 import com.baidu.mapapi.search.route.RoutePlanSearch;
 import com.baidu.mapapi.search.route.TransitRouteResult;
+import com.baidu.mapapi.search.route.WalkingRouteLine;
 import com.baidu.mapapi.search.route.WalkingRoutePlanOption;
 import com.baidu.mapapi.search.route.WalkingRouteResult;
 import com.baidu.mapapi.utils.SpatialRelationUtil;
@@ -100,6 +102,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	private double mCurrentLon = 0.0;
 	private float mCurrentAccracy;
 
+	private int textCount = 50;
+
 
 
 	BaiduMap mBaiduMap;
@@ -123,7 +127,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	Button buttonSearch;
 
 	@BindView(R.id.button_light)
-	CheckBox lightButton;
+	ImageView lightButton;
 
 	@BindView(R.id.lock_btn)
 	LinearLayout buttonLock;
@@ -170,25 +174,27 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	private boolean is5show = false;
 	private boolean buttonUI = true;  //开启寻狗和关闭寻狗ui
 	boolean isFirstLoc = true; // 是否首次定位
+	private boolean lightFlag; // 灯是否是亮的
 
 	private InfoWindow mInfoWindow;
 	private Vibrator vibrator;
 
 
+
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		View inflate = inflater.inflate(R.layout.activity_map, container, false);
+		View view = inflater.inflate(R.layout.activity_map, container, false);
 		mApplication = DemoApplication.getContext();
 		mSensorManager = (SensorManager) mApplication.getSystemService(SENSOR_SERVICE);// 获取传感器管理服务
 		vibrator = (Vibrator) mApplication.getSystemService(Service.VIBRATOR_SERVICE);  // 获取震动服务
 		mCurrentMode = LocationMode.NORMAL;
-		ButterKnife.bind(this, inflate);
+		ButterKnife.bind(this, view);
 		initView();
 		initListener();
 		initLocation();
 		initPresenter();
-		return inflate;
+		return view;
 	}
 
 	/**
@@ -352,7 +358,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 				ToastUtils.showToast("密码验证成功，正在开锁...");
 				// 发送相应的消息
 				try {
-					reverseInAndOutStatus(1);
+					reverseInAndOutStatus(2);
 				} catch (Exception e) {
 					ToastUtils.showToast("未连接上服务器，请先使用小狗定位功能!");
 				}
@@ -449,7 +455,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		// 先将狗的位置显示
 		float curDogLon = dogInfo.getLongitude();
 		float curDogLat = dogInfo.getLatitude();
-		showDogAndStatus(dogInfo);
+		// 显示狗的位置和状态，并且判断电量等信息
+		showDogAndCheckStatus(dogInfo);
 		// 判断狗的位置，如果超出则报警
 		if (isDraw) {
 			if (!isInner(curDogLat, curDogLon)) {
@@ -468,8 +475,6 @@ public class MapFragment extends Fragment implements SensorEventListener,
 				}
 			}
 		}
-		// TODO:判断狗的电量、状态信息
-		checkDogStatus(dogInfo);
 	}
 
 	/**
@@ -500,7 +505,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	private void handleBattery(int batteryVal) {
 		// 此时如果
 		if (batteryVal <= 5 && !is5show) {
-			//TODO:震动
+			// 震动
 			vibrator.vibrate(2000);
 			// show
 			AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
@@ -512,7 +517,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 				is5show = false;
 			}
 		}
-		if (batteryVal <= 20 && !is20show) {
+		if (batteryVal <= 20 && !is20show && !is5show) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
 			builder.setTitle("电量报警").setMessage("小狗电量小于20%!").show();
 			is20show = true;
@@ -522,7 +527,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 				is20show = false;
 			}
 		}
-		if (batteryVal <= 40 && !is40show) {
+		if (batteryVal <= 40 && !is40show && !is20show && !is5show) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
 			builder.setTitle("电量报警").setMessage("小狗电量小于40%").show();
 			is40show = true;
@@ -534,9 +539,9 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	}
 
 	/**
-	 * 显示狗的位置和状态
+	 * 显示狗的位置和状态，并判断狗的电量信息
 	 */
-	private void showDogAndStatus(DogCurrentInfo info) {
+	private void showDogAndCheckStatus(DogCurrentInfo info) {
 		//定义Maker坐标点
 		float latitude = info.getLatitude();
 		float longitude = info.getLongitude();
@@ -556,6 +561,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		curMarker = (Marker) mBaiduMap.addOverlay(option);
 
 		showWindow(info);
+		checkDogStatus(info);
 	}
 
 	/**
@@ -677,7 +683,12 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		if (walkingRouteResult.getRouteLines().size() > 0) {
 			//获取路径规划数据,(以返回的第一条数据为例)
 			//为WalkingRouteOverlay实例设置路径数据
-			mSearchOverlay.setData(walkingRouteResult.getRouteLines().get(0));
+			List<WalkingRouteLine> routeLines = walkingRouteResult.getRouteLines();
+			if (routeLines == null || routeLines.size() == 0) {
+				ToastUtils.showToast("很遗憾，并未找到合适的步行路径!");
+				return;
+			}
+			mSearchOverlay.setData(routeLines.get(0));
 			//在地图上绘制WalkingRouteOverlay
 			mSearchOverlay.addToMap();
 		}
@@ -700,7 +711,14 @@ public class MapFragment extends Fragment implements SensorEventListener,
 			case R.id.button_light:
 				// 开关灯
 				try {
-					reverseInAndOutStatus(2);
+					reverseInAndOutStatus(1);
+					// 只有真正切换完以后再改变ui
+					if (!lightFlag) {
+						lightButton.setImageResource(R.drawable.light);
+					} else {
+						lightButton.setImageResource(R.drawable.light_dark);
+					}
+					lightFlag = !lightFlag;
 				} catch (Exception e) {
 					ToastUtils.showToast("未连接上服务器，请先开启小狗定位再使用");
 				}
@@ -728,7 +746,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 					// 此处设置开发者获取 到的方向信息，顺时针0-360
 					.direction(mCurrentDirection).latitude(mCurrentLat).longitude(mCurrentLon).build();
 			mBaiduMap.setMyLocationData(locData);
-			showDogAndStatus(new DogCurrentInfo.Builder().lon((float) mCurrentLon).lat((float) mCurrentLat).build());
+//			DogCurrentInfo.Builder dogInfo = new DogCurrentInfo.Builder().lon((float) mCurrentLon).lat((float) mCurrentLat).bat(textCount -- );
+//			showDogAndCheckStatus(dogInfo.build());
 			// 首次定位的时候，需要放大以观察位置。
 			if (isFirstLoc) {
 				isFirstLoc = false;
