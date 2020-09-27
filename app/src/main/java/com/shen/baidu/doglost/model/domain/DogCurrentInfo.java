@@ -6,9 +6,9 @@ package com.shen.baidu.doglost.model.domain;
 public class DogCurrentInfo {
 
     // 经度
-    private float longitude;
+    private double longitude;
     // 纬度
-    private float latitude;
+    private double latitude;
     // 电量
     private int battery;
     // 状态
@@ -24,12 +24,31 @@ public class DogCurrentInfo {
         this.other = builder.other;
     }
 
-    public float getLongitude() {
+    public double getLongitude() {
         return longitude;
     }
 
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
 
-    public float getLatitude() {
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public void setBattery(int battery) {
+        this.battery = battery;
+    }
+
+    public void setDogStatus(byte dogStatus) {
+        this.dogStatus = dogStatus;
+    }
+
+    public void setOther(int other) {
+        this.other = other;
+    }
+
+    public double getLatitude() {
         return latitude;
     }
 
@@ -51,9 +70,9 @@ public class DogCurrentInfo {
 
     public static class Builder {
         // 经度
-        float longitude;
+        double longitude;
         // 纬度
-        float latitude;
+        double latitude;
         // 电量
         int battery;
         // 状态
@@ -61,12 +80,12 @@ public class DogCurrentInfo {
         // 备用
         int other;
 
-        public Builder lon(float lon) {
+        public Builder lon(double lon) {
             this.longitude = lon;
             return this;
         }
 
-        public Builder lat(float latitude) {
+        public Builder lat(double latitude) {
             this.latitude = latitude;
             return this;
         }

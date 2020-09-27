@@ -70,6 +70,7 @@ import com.shen.baidu.doglost.ui.activity.CreateFenceOptions;
 import com.shen.baidu.doglost.ui.dialog.FenceCreateDialog;
 import com.shen.baidu.doglost.ui.dialog.PassWordDialog;
 import com.shen.baidu.doglost.utils.BitmapUtil;
+import com.shen.baidu.doglost.utils.DataHandlerUtil;
 import com.shen.baidu.doglost.utils.LogUtils;
 import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.INetCallBack;
@@ -132,6 +133,10 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	@BindView(R.id.lock_btn)
 	LinearLayout buttonLock;
 
+	@BindView(R.id.button_dog)
+	Button buttonDog;
+
+
 
 
 	private Context mApplication;
@@ -175,10 +180,11 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	private boolean buttonUI = true;  //开启寻狗和关闭寻狗ui
 	boolean isFirstLoc = true; // 是否首次定位
 	private boolean lightFlag; // 灯是否是亮的
+	private boolean isPerson = true;
 
 	private InfoWindow mInfoWindow;
 	private Vibrator vibrator;
-
+	private MapStatus.Builder mBuilder;
 
 
 	@Nullable
@@ -196,6 +202,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		initPresenter();
 		return view;
 	}
+
 
 	/**
 	 * 初始化视图
@@ -215,6 +222,24 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	private void initListener() {
 		lightButton.setOnClickListener(this);
 		buttonLock.setOnClickListener(this);
+		/**
+		 * 切换视角
+		 */
+		buttonDog.setOnClickListener(v -> {
+			if (isPerson) {
+				if (mCurDogPosition == null) {
+					ToastUtils.showToast("未获取到狗数据!");
+					return;
+				}
+				changeFocus(mCurDogPosition);
+				isPerson = false;
+				buttonDog.setText("聚焦到人");
+			} else {
+				changeFocus(new LatLng(mCurrentLat, mCurrentLon));
+				isPerson = true;
+				buttonDog.setText("聚焦到狗");
+			}
+		});
 		requestLocButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				switch (mCurrentMode) {
@@ -373,6 +398,17 @@ public class MapFragment extends Fragment implements SensorEventListener,
 
 	}
 
+	/**
+	 * 修改此时聚焦的位置
+	 * @param latLng
+	 */
+	private void changeFocus(LatLng latLng) {
+		mBuilder = new MapStatus.Builder();
+		mBuilder.target(latLng).zoom(18f);
+		mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(mBuilder.build()));
+	}
+
+
 	private void resetStatus() {
 		isDraw = false;
 		vertexIndex = 0;
@@ -453,8 +489,12 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	public void onNetDataLoaded(DogCurrentInfo dogInfo) {
 		LogUtils.d(this, "数据加载成功");
 		// 先将狗的位置显示
-		float curDogLon = dogInfo.getLongitude();
-		float curDogLat = dogInfo.getLatitude();
+		double curDogLon = dogInfo.getLongitude();
+		double curDogLat = dogInfo.getLatitude();
+		// 将狗此时的gps坐标转换为百度地图坐标
+		LatLng baiPosition = DataHandlerUtil.changeGps2Bai(curDogLat, curDogLon);
+		dogInfo.setLatitude(baiPosition.latitude);
+		dogInfo.setLongitude(baiPosition.longitude);
 		// 显示狗的位置和状态，并且判断电量等信息
 		showDogAndCheckStatus(dogInfo);
 		// 判断狗的位置，如果超出则报警
@@ -543,8 +583,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	 */
 	private void showDogAndCheckStatus(DogCurrentInfo info) {
 		//定义Maker坐标点
-		float latitude = info.getLatitude();
-		float longitude = info.getLongitude();
+		double latitude = info.getLatitude();
+		double longitude = info.getLongitude();
 		mCurDogPosition = new LatLng(latitude, longitude);
 		//构建Marker图标
 		BitmapDescriptor bitmap = BitmapDescriptorFactory
@@ -752,9 +792,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 			if (isFirstLoc) {
 				isFirstLoc = false;
 				LatLng ll = new LatLng(location.getLatitude(), location.getLongitude());
-				MapStatus.Builder builder = new MapStatus.Builder();
-				builder.target(ll).zoom(18.0f);
-				mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+				changeFocus(ll);
 			}
 		}
 

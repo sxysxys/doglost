@@ -1,6 +1,11 @@
 package com.shen.baidu.doglost.utils;
 
+import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.utils.CoordinateConverter;
+
 public class DataHandlerUtil {
+
+    private static CoordinateConverter converter;
     /**
      * Crc校验。
      * @param buffer
@@ -39,6 +44,26 @@ public class DataHandlerUtil {
         l |= ((long) bytes[3] << 24);
         return Float.intBitsToFloat(l);
 
+    }
+
+    public static double getFloat2(byte[] bytes) {
+        return ((bytes[0] & 0x0ff) + bytes[1] * 0.01 + bytes[2] * 0.0001 + bytes[3] * 0.000001);
+    }
+
+    /**
+     * 转化坐标
+     * @param lat
+     * @param lon
+     * @return
+     */
+    public static LatLng changeGps2Bai(double lat, double lon) {
+        if (converter == null) {
+            converter = new CoordinateConverter();
+            converter.from(CoordinateConverter.CoordType.COMMON);
+        }
+        LatLng sourceLatLng = new LatLng(lat, lon);
+        converter.coord(sourceLatLng);
+        return converter.convert();
     }
 
 //    private static int getInt(byte[] bytes)

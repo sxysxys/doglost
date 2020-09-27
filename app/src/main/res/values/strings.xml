@@ -25,9 +25,10 @@
     <string name="lock_text">一键上锁</string>
 
     <string name="battery_text">电池:%1$d %%</string>
-    <string name="lon_text">经度:%1$.4f</string>
-    <string name="lat_text">纬度:%1$.4f</string>
+    <string name="lon_text">经度:%1$.6f</string>
+    <string name="lat_text">纬度:%1$.6f</string>
     <string name="model_text">普通模式</string>
     <string name="history_search_text">历史轨迹查询</string>
+    <string name="focus_dog_text">切换到狗</string>
 
 </resources>

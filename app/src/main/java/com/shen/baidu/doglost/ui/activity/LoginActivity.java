@@ -95,7 +95,7 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
         int gps = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
         int wifi = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
         int offLine = checkSelfPermission(READ_PHONE_STATE);
-        if (gps != PERMISSION_GRANTED || wifi != PERMISSION_GRANTED || offLine != PERMISSION_GRANTED) {
+        if (gps != PERMISSION_GRANTED || wifi != PERMISSION_GRANTED ||offLine != PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,
                     Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.READ_PHONE_STATE},PERMISSION_RESULT_CODE);
         }

@@ -26,6 +26,7 @@ import com.xuhao.didi.socket.client.sdk.client.connection.IConnectionManager;
 import com.xuhao.didi.socket.client.sdk.client.connection.NoneReconnect;
 
 import java.nio.ByteOrder;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -114,8 +115,8 @@ public class NetPresenterImpl implements INetPresenter {
                     if (connectCount == 10) {
                         if (mManager != null && !mManager.isConnect()) {
                             mManager.connect();
-                            connectCount = 0;
                         }
+                        connectCount = 0;
                     }
                     connectCount ++;
                     break;
@@ -278,14 +279,17 @@ public class NetPresenterImpl implements INetPresenter {
                 if (crcH == (byte) (buf[15] & 0xFF) && crcL ==(byte)(buf[16] & 0xFF)) {
                     // TODO 将数据封装
                     // 经度
-                    byte[] lon = new byte[]{buf[7],buf[6],buf[5],buf[4]};
-                    byte[] lat = new byte[]{buf[11],buf[10],buf[9],buf[8]};
-                    float lonfloat = DataHandlerUtil.getFloat(lon);
-                    float latfloat = DataHandlerUtil.getFloat(lat);
+//                    byte[] lon = new byte[]{buf[7],buf[6],buf[5],buf[4]};
+//                    byte[] lat = new byte[]{buf[11],buf[10],buf[9],buf[8]};
+
+                    byte[] lon = new byte[]{buf[4],buf[5],buf[6],buf[7]};
+                    byte[] lat = new byte[]{buf[8],buf[9],buf[10],buf[11]};
+                    double lonfloat = DataHandlerUtil.getFloat2(lon);
+                    double latfloat = DataHandlerUtil.getFloat2(lat);
                     // 纬度
                     DogCurrentInfo dogCurrentInfo = new DogCurrentInfo.Builder().
                             lon(lonfloat).lat(latfloat)
-                            .bat(buf[11]).status(buf[12]).build();
+                            .bat(buf[12]).status(buf[13]).build();
                     netCallBack.onNetDataLoaded(dogCurrentInfo);
                 }
             }
