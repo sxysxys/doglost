@@ -1,9 +1,12 @@
 package com.shen.baidu.doglost.presenter.impl;
 
+import android.util.Log;
+
 import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.model.Api;
 import com.shen.baidu.doglost.model.domain.HistoryPoint;
 import com.shen.baidu.doglost.presenter.IHistoryPresenter;
+import com.shen.baidu.doglost.utils.LogUtils;
 import com.shen.baidu.doglost.utils.RetrofitManager;
 import com.shen.baidu.doglost.view.IHistoryCallback;
 
@@ -68,6 +71,7 @@ public class HistoryPresenterImpl implements IHistoryPresenter {
             }
         } else {
             if (callback != null) {
+                LogUtils.d(this, "历史数据回来了...");
                 callback.onNetDataLoaded(historyPoints);
             }
         }

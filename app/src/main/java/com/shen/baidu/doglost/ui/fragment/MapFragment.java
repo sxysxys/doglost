@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -115,8 +114,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	@BindView(R.id.button1)
 	Button requestLocButton;
 
-	@BindView(R.id.button_open)
-	Button searchButton;
+//	@BindView(R.id.button_open)
+//	Button searchButton;
 
 	@BindView(R.id.btn_create)
 	Button createButton;
@@ -127,11 +126,14 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	@BindView(R.id.button_search)
 	Button buttonSearch;
 
+	@BindView(R.id.button_lock)
+	ImageView buttonLock;
+
 	@BindView(R.id.button_light)
 	ImageView lightButton;
 
 	@BindView(R.id.lock_btn)
-	LinearLayout buttonLock;
+	LinearLayout lockLayout;
 
 	@BindView(R.id.button_dog)
 	Button buttonDog;
@@ -181,6 +183,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	boolean isFirstLoc = true; // 是否首次定位
 	private boolean lightFlag; // 灯是否是亮的
 	private boolean isPerson = true;
+	private boolean isLock = false;
 
 	private InfoWindow mInfoWindow;
 	private Vibrator vibrator;
@@ -200,7 +203,17 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		initListener();
 		initLocation();
 		initPresenter();
+		startConnect();
 		return view;
+	}
+
+	/**
+	 * 一进去就开启连接
+	 */
+	private void startConnect() {
+		if (mNetPresenter != null) {
+			mNetPresenter.firstConnect();
+		}
 	}
 
 
@@ -221,7 +234,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 
 	private void initListener() {
 		lightButton.setOnClickListener(this);
-		buttonLock.setOnClickListener(this);
+		lockLayout.setOnClickListener(this);
 		/**
 		 * 切换视角
 		 */
@@ -287,24 +300,24 @@ public class MapFragment extends Fragment implements SensorEventListener,
 			}
 		});
 
-		searchButton.setOnClickListener(v -> {
-			if (mNetPresenter != null) {
-				if (isOpen || !buttonUI) {
-					mNetPresenter.delConnect();
-					searchButton.setText("打开寻狗");
-					buttonUI = true;
-				} else {
-					if (isFirstStart) {
-						mNetPresenter.firstConnect();
-						isFirstStart = false;
-					} else {
-						mNetPresenter.connect();
-					}
-					searchButton.setText("关闭寻狗");
-					buttonUI = false;
-				}
-			}
-		});
+//		searchButton.setOnClickListener(v -> {
+//			if (mNetPresenter != null) {
+//				if (isOpen || !buttonUI) {
+//					mNetPresenter.delConnect();
+//					searchButton.setText("打开寻狗");
+//					buttonUI = true;
+//				} else {
+//					if (isFirstStart) {
+//						mNetPresenter.firstConnect();
+//						isFirstStart = false;
+//					} else {
+//						mNetPresenter.connect();
+//					}
+//					searchButton.setText("关闭寻狗");
+//					buttonUI = false;
+//				}
+//			}
+//		});
 
 		/**
 		 * 点击创建按钮，跳转后将数据带回来。
@@ -380,10 +393,13 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		mPassWordCallback = new PassWordDialog.Callback() {
 			@Override
 			public void onSureCallback() {
-				ToastUtils.showToast("密码验证成功，正在开锁...");
+				ToastUtils.showToast("密码验证成功");
 				// 发送相应的消息
 				try {
 					reverseInAndOutStatus(2);
+					// 改变ui
+					isLock = true;
+					buttonLock.setImageResource(R.drawable.lock);
 				} catch (Exception e) {
 					ToastUtils.showToast("未连接上服务器，请先使用小狗定位功能!");
 				}
@@ -499,7 +515,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		showDogAndCheckStatus(dogInfo);
 		// 判断狗的位置，如果超出则报警
 		if (isDraw) {
-			if (!isInner(curDogLat, curDogLon)) {
+			if (!isInner(dogInfo.getLatitude(), dogInfo.getLongitude())) {
 				ToastUtils.showToast("狗过界了");
 				if (isFirstOut) {
 					// 震动
@@ -743,6 +759,10 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		switch (v.getId()) {
 			case R.id.lock_btn:
 				// 先输入密码判断
+				if (isLock) {
+					ToastUtils.showToast("小狗已经上锁!");
+					break;
+				}
 				if (mPassWordDialog == null) {
 					mPassWordDialog = new PassWordDialog(getContext(), mPassWordCallback);
 				}

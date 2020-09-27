@@ -21,6 +21,7 @@ import com.baidu.mapapi.SDKInitializer;
 import com.shen.baidu.doglost.R;
 import com.shen.baidu.doglost.constant.Const;
 import com.shen.baidu.doglost.model.domain.ResponseLogin;
+import com.shen.baidu.doglost.model.domain.SendBean;
 import com.shen.baidu.doglost.presenter.ILoginPresenter;
 import com.shen.baidu.doglost.presenter.impl.LoginPresenterImpl;
 import com.shen.baidu.doglost.utils.LogUtils;
@@ -45,6 +46,9 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
 
     @BindView(R.id.login_password)
     EditText loginPassWord;
+
+    @BindView(R.id.btn_cancel)
+    Button cancelButton;
 
     private LoginActivity.SDKReceiver mReceiver;
 
@@ -146,6 +150,10 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
             // 发起请求
             mLoginPresenter.loginRequest(loginText, loginPassWord);
         });
+
+        cancelButton.setOnClickListener(v -> {
+            finish();
+        });
     }
 
 
@@ -164,7 +172,7 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
             // 此时说明已经验证通过，将用户的用户名和密码保存起来。
             PassWordUtil.getInstance().save(loginName.getText().toString(), loginPassWord.getText().toString());
             // 此时确定账号密码了
-            Const.deviceId = Integer.parseInt(loginName.getText().toString().substring(3,6));
+            SendBean.getInstance().setDeviceId((byte) Integer.parseInt(loginName.getText().toString().substring(3,6)));
             // 此时执行跳转
             skipMain();
         } else if (data.getCode() == 400){

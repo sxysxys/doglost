@@ -14,7 +14,7 @@ import static com.shen.baidu.doglost.utils.DataHandlerUtil.Crc16Sum;
  */
 public class SendBean implements IPulseSendable {
 
-    public byte[] buffer = new byte[]{(byte) 0xFF,(byte) 0xE2,(byte) Const.sendLength, (byte) Const.deviceId,0x00,0x00,0x00, 0x00, 0x0D, 0x0A};
+    private byte[] buffer = new byte[]{(byte) 0xFF,(byte) 0xE2,(byte) Const.sendLength, (byte) Const.deviceId,0x00,0x00,0x00, 0x00, 0x0D, 0x0A};
 
     private static SendBean sendBean;
 
@@ -37,6 +37,10 @@ public class SendBean implements IPulseSendable {
 
     public byte getMFlag() {
         return buffer[4];
+    }
+
+    public void setDeviceId(byte deviceId) {
+        buffer[3] = deviceId;
     }
 
 

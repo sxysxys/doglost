@@ -20,23 +20,23 @@
         android:layout_centerVertical="true"
         android:weightSum="1">
 
-        <Button
-            android:id="@+id/button_open"
-            android:layout_marginBottom="5dp"
-            android:layout_marginTop="5dp"
-            android:layout_width="60dp"
-            android:layout_weight="0.25"
-            android:layout_height="0dp"
-            android:background="@color/gray"
-            android:textColor="@color/white"
-            android:text="@string/btn_open_search" />
+<!--        <Button-->
+<!--            android:id="@+id/button_open"-->
+<!--            android:layout_marginBottom="5dp"-->
+<!--            android:layout_marginTop="5dp"-->
+<!--            android:layout_width="60dp"-->
+<!--            android:layout_weight="0.25"-->
+<!--            android:layout_height="0dp"-->
+<!--            android:background="@color/gray"-->
+<!--            android:textColor="@color/white"-->
+<!--            android:text="@string/btn_open_search" />-->
 
         <Button
             android:layout_marginBottom="5dp"
             android:layout_marginTop="5dp"
             android:id="@+id/button_search"
             android:layout_width="60dp"
-            android:layout_weight="0.25"
+            android:layout_weight="0.33"
             android:layout_height="0dp"
             android:background="@color/gray"
             android:textColor="@color/white"
@@ -47,7 +47,7 @@
             android:layout_marginBottom="5dp"
             android:layout_marginTop="5dp"
             android:layout_width="60dp"
-            android:layout_weight="0.25"
+            android:layout_weight="0.33"
             android:layout_height="0dp"
             android:text="@string/model_text"
             android:background="@color/gray"
@@ -58,7 +58,7 @@
             android:layout_marginBottom="5dp"
             android:layout_marginTop="5dp"
             android:layout_width="60dp"
-            android:layout_weight="0.25"
+            android:layout_weight="0.33"
             android:layout_height="0dp"
             android:text="@string/focus_dog_text"
             android:background="@color/gray"
@@ -77,10 +77,11 @@
         android:layout_above="@+id/layout_tracing_bottom">
 
         <ImageView
+            android:layout_marginTop="5dp"
             android:id="@+id/button_lock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@mipmap/lock"
+            android:src="@drawable/lock_open"
             android:layout_above="@+id/lock_text"
             android:layout_marginLeft="10dp" />
 

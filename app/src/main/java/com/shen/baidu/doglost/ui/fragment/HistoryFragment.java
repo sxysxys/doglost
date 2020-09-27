@@ -32,6 +32,7 @@ import com.shen.baidu.doglost.model.domain.HistoryPoint;
 import com.shen.baidu.doglost.presenter.IHistoryPresenter;
 import com.shen.baidu.doglost.presenter.impl.HistoryPresenterImpl;
 import com.shen.baidu.doglost.ui.dialog.SelectTimeDialog;
+import com.shen.baidu.doglost.utils.DataHandlerUtil;
 import com.shen.baidu.doglost.utils.LogUtils;
 import com.shen.baidu.doglost.utils.ToastUtils;
 import com.shen.baidu.doglost.view.IHistoryCallback;
@@ -156,13 +157,14 @@ public class HistoryFragment extends Fragment implements IHistoryCallback {
     }
 
     private void handlerPoint(List<HistoryPoint.DataBean> dataBeans) {
+        LogUtils.d(this, "正在处理数据...");
         double lanSum = 0;
         double latSum = 0;
         for (HistoryPoint.DataBean dataBean : dataBeans) {
             float latitude = dataBean.getLatitude();
             float longitude = dataBean.getLongitude();
-            LatLng latLng = new LatLng(latitude, longitude);
-            latLngs.add(latLng);
+            LatLng baiPosition = DataHandlerUtil.changeGps2Bai(latitude, longitude);
+            latLngs.add(baiPosition);
             latSum += latitude;
             lanSum += longitude;
         }

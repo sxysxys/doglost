@@ -59,7 +59,7 @@ public class DataHandlerUtil {
     public static LatLng changeGps2Bai(double lat, double lon) {
         if (converter == null) {
             converter = new CoordinateConverter();
-            converter.from(CoordinateConverter.CoordType.COMMON);
+            converter.from(CoordinateConverter.CoordType.GPS);
         }
         LatLng sourceLatLng = new LatLng(lat, lon);
         converter.coord(sourceLatLng);
