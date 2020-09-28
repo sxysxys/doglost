@@ -200,7 +200,7 @@ public class LoginActivity extends AppCompatActivity implements ILoginInfoCallba
      */
     @Override
     public void onNetError() {
-        ToastUtils.showToast("网络错误，请检查网络");
+        ToastUtils.showToast("请求服务器失败，请重试");
     }
 
     @Override

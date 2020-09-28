@@ -102,6 +102,11 @@ public class DynamicDemo extends Activity implements SensorEventListener {
 			}
 
 			@Override
+			public void onMapStatusChangeStart(MapStatus mapStatus, int i) {
+
+			}
+
+			@Override
 			public void onMapStatusChangeFinish(MapStatus arg0) {
 				mCurrentZoom = arg0.zoom;
 			}

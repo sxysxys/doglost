@@ -132,6 +132,9 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	@BindView(R.id.button_light)
 	ImageView lightButton;
 
+	@BindView(R.id.button_ring)
+	ImageView lightRing;
+
 	@BindView(R.id.lock_btn)
 	LinearLayout lockLayout;
 
@@ -164,7 +167,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	private Marker curMarker;
 	private RoutePlanSearch mRouteSearch;
 //	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
-	private LatLng mCurDogPosition;
+	private LatLng mCurDogPosition = new LatLng(31.84952, 117.30283);
 	private WalkingRouteOverlay mSearchOverlay;
 	private PassWordDialog.Callback mPassWordCallback;
 	private PassWordDialog mPassWordDialog;
@@ -294,9 +297,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 			}
 
 			@Override
-			public boolean onMapPoiClick(MapPoi mapPoi) {
+			public void onMapPoiClick(MapPoi mapPoi) {
 				//点击地图上的poi图标获取描述信息：mapPoi.getName()，经纬度：mapPoi.getPosition()
-				return false;
 			}
 		});
 
@@ -374,7 +376,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		 * 设置路线导航事件
 		 */
 		buttonSearch.setOnClickListener(v -> {
-			if (!isOpen || mCurDogPosition == null) {
+			if (mCurDogPosition == null) {
 				ToastUtils.showToast("未获取到狗数据，请稍后重试");
 				return;
 			}
@@ -517,6 +519,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		if (isDraw) {
 			if (!isInner(dogInfo.getLatitude(), dogInfo.getLongitude())) {
 				ToastUtils.showToast("狗过界了");
+				lightRing.setImageResource(R.drawable.ring_light);
 				if (isFirstOut) {
 					// 震动
 					vibrator.vibrate(2000);
@@ -524,12 +527,15 @@ public class MapFragment extends Fragment implements SensorEventListener,
 					isFirstOut = false;
 				}
 			} else {
+				lightRing.setImageResource(0);
 				// 如果狗出去又进去
 				if (!isFirstOut) {
 					reverseInAndOutStatus(4);
 					isFirstOut = true;
 				}
 			}
+		} else {
+			lightRing.setImageResource(0);
 		}
 	}
 
@@ -644,7 +650,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	 */
 	@Override
 	public void onNetError() {
-		isOpen = false;
+//		isOpen = false;
 		ToastUtils.showToast("网络错误，未能连接上服务器");
 	}
 
@@ -654,7 +660,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	@Override
 	public void onNetSuccess() {
 		ToastUtils.showToast("连接服务器成功");
-		isOpen = true;
+//		isOpen = true;
 	}
 
 	/**
@@ -678,7 +684,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	 */
 	@Override
 	public void onConnectQuit() {
-		isOpen = false;
+//		isOpen = false;
 	}
 
 	@Override
@@ -720,8 +726,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	}
 
 	@Override
-	public boolean onMapPoiClick(MapPoi mapPoi) {
-		return false;
+	public void onMapPoiClick(MapPoi mapPoi) {
 	}
 
 	/**

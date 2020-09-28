@@ -50,6 +50,7 @@ public class LoginPresenterImpl implements ILoginPresenter {
 
             @Override
             public void onFailure(Call<ResponseLogin> call, Throwable t) {
+                t.printStackTrace();
                 if (loginInfoCallback != null) {
                     loginInfoCallback.onNetError();
                 }
