@@ -9,6 +9,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -77,6 +79,8 @@ import com.shen.baidu.mapapi.overlayutil.WalkingRouteOverlay;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -141,6 +145,9 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	@BindView(R.id.button_dog)
 	Button buttonDog;
 
+	@BindView(R.id.lock_text)
+	TextView lockText;
+
 
 
 
@@ -166,8 +173,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 
 	private Marker curMarker;
 	private RoutePlanSearch mRouteSearch;
-//	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
-	private LatLng mCurDogPosition = new LatLng(31.84952, 117.30283);
+	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
+//	private LatLng mCurDogPosition;
 	private WalkingRouteOverlay mSearchOverlay;
 	private PassWordDialog.Callback mPassWordCallback;
 	private PassWordDialog mPassWordDialog;
@@ -187,10 +194,14 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	private boolean lightFlag; // 灯是否是亮的
 	private boolean isPerson = true;
 	private boolean isLock = false;
+	private boolean isLoading = false;
 
 	private InfoWindow mInfoWindow;
 	private Vibrator vibrator;
 	private MapStatus.Builder mBuilder;
+	private Timer mTimer;
+	private Handler mHandler;
+	private boolean mIsinner = true;
 
 
 	@Nullable
@@ -207,7 +218,35 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		initLocation();
 		initPresenter();
 		startConnect();
+		initHandler();
 		return view;
+	}
+
+	private void initHandler() {
+		mHandler = new Handler()
+		{
+			@Override
+			public void handleMessage(Message msg) {
+				super.handleMessage(msg);
+				switch (msg.what)
+				{
+					case 1:
+						isLock = true;
+						buttonLock.setImageResource(R.drawable.lock);
+						lockText.setText("一键放气");
+						isLoading = false;
+						break;
+					case 2:
+						isLock = false;
+						buttonLock.setImageResource(R.drawable.lock_open);
+						lockText.setText("一键充气");
+						isLoading = false;
+						break;
+					default:
+						break;
+				}
+			}
+		};
 	}
 
 	/**
@@ -400,10 +439,9 @@ public class MapFragment extends Fragment implements SensorEventListener,
 				try {
 					reverseInAndOutStatus(2);
 					// 改变ui
-					isLock = true;
-					buttonLock.setImageResource(R.drawable.lock);
+					changeLockUi();
 				} catch (Exception e) {
-					ToastUtils.showToast("未连接上服务器，请先使用小狗定位功能!");
+					ToastUtils.showToast("未连接上服务器!");
 				}
 			}
 
@@ -414,6 +452,40 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		};
 
 
+	}
+
+	/**
+	 * 改变锁的ui
+	 */
+	private void changeLockUi() {
+		isLoading = true;
+		if (!isLock) {
+			// 一分钟过后执行
+			mTimer = new Timer(true);
+			mTimer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					Message msg = new Message();
+					msg.what = 1;
+					mHandler.sendMessage(msg);
+				}
+			}, 60 * 1000);
+			lockText.setText("正在充气..");
+			ToastUtils.showToast("已发送充气指令..");
+		} else {
+			// 一分钟过后执行
+			mTimer = new Timer(true);
+			mTimer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					Message msg = new Message();
+					msg.what = 2;
+					mHandler.sendMessage(msg);
+				}
+			}, 60 * 1000);
+			lockText.setText("正在放气..");
+			ToastUtils.showToast("已发送放气指令..");
+		}
 	}
 
 	/**
@@ -517,12 +589,13 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		showDogAndCheckStatus(dogInfo);
 		// 判断狗的位置，如果超出则报警
 		if (isDraw) {
-			if (!isInner(dogInfo.getLatitude(), dogInfo.getLongitude())) {
+			mIsinner = isInner(dogInfo.getLatitude(), dogInfo.getLongitude());
+			if (!mIsinner) {
 				ToastUtils.showToast("狗过界了");
 				lightRing.setImageResource(R.drawable.ring_light);
 				if (isFirstOut) {
 					// 震动
-					vibrator.vibrate(2000);
+					vibrator.vibrate(1000);
 					reverseInAndOutStatus(4);
 					isFirstOut = false;
 				}
@@ -535,7 +608,13 @@ public class MapFragment extends Fragment implements SensorEventListener,
 				}
 			}
 		} else {
+			// 将标志置位
 			lightRing.setImageResource(0);
+			isFirstOut = true;
+			// 判断如果之前是出去的状态
+//			if (!mIsinner) {
+//				reverseInAndOutStatus(4);
+//			}
 		}
 	}
 
@@ -764,8 +843,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		switch (v.getId()) {
 			case R.id.lock_btn:
 				// 先输入密码判断
-				if (isLock) {
-					ToastUtils.showToast("小狗已经上锁!");
+				if (isLoading) {
+					ToastUtils.showToast("正在操作中，请勿重复操作!");
 					break;
 				}
 				if (mPassWordDialog == null) {

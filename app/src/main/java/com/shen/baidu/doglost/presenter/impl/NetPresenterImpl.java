@@ -102,7 +102,7 @@ public class NetPresenterImpl implements INetPresenter {
     }
 
     /**
-     * 开启定时任务，每
+     * 开启定时任务
      */
     private void initHandler() {
         mHandler = new Handler(msg -> {
