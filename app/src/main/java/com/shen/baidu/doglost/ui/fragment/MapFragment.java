@@ -173,8 +173,8 @@ public class MapFragment extends Fragment implements SensorEventListener,
 
 	private Marker curMarker;
 	private RoutePlanSearch mRouteSearch;
-	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
-//	private LatLng mCurDogPosition;
+//	private LatLng mCurDogPosition = new LatLng(31.83, 117.2);
+	private LatLng mCurDogPosition;
 	private WalkingRouteOverlay mSearchOverlay;
 	private PassWordDialog.Callback mPassWordCallback;
 	private PassWordDialog mPassWordDialog;
@@ -591,7 +591,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		if (isDraw) {
 			mIsinner = isInner(dogInfo.getLatitude(), dogInfo.getLongitude());
 			if (!mIsinner) {
-				ToastUtils.showToast("狗过界了");
+				ToastUtils.showToast("小狗已经离开安全范围");
 				lightRing.setImageResource(R.drawable.ring_light);
 				if (isFirstOut) {
 					// 震动
@@ -842,15 +842,20 @@ public class MapFragment extends Fragment implements SensorEventListener,
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.lock_btn:
-				// 先输入密码判断
-				if (isLoading) {
-					ToastUtils.showToast("正在操作中，请勿重复操作!");
-					break;
-				}
-				if (mPassWordDialog == null) {
-					mPassWordDialog = new PassWordDialog(getContext(), mPassWordCallback);
-				}
-				mPassWordDialog.show();
+				// version1 : 先输入密码判断，60s以后翻转
+//				if (isLoading) {
+//					ToastUtils.showToast("正在操作中，请勿重复操作!");
+//					break;
+//				}
+//				if (mPassWordDialog == null) {
+//					mPassWordDialog = new PassWordDialog(getContext(), mPassWordCallback);
+//				}
+//				mPassWordDialog.show();
+
+				// version2 : 直接修改
+				reverseInAndOutStatus(2);
+				// 改变ui
+				changeLockUi2();
 				break;
 			case R.id.button_light:
 				// 开关灯
@@ -869,6 +874,16 @@ public class MapFragment extends Fragment implements SensorEventListener,
 				break;
 			default:
 				break;
+		}
+	}
+
+	private void changeLockUi2() {
+		if (!isLoading) {
+			isLoading = true;
+			lockText.setText("停止充气");
+		} else {
+			isLoading = false;
+			lockText.setText("开始充气");
 		}
 	}
 
@@ -952,6 +967,7 @@ public class MapFragment extends Fragment implements SensorEventListener,
 		mBaiduMap.setMyLocationEnabled(false);
 		mMapView.onDestroy();
 		mMapView = null;
+		mNetPresenter.delConnect();
 		mNetPresenter.unregisterCallback(this);
 		super.onDestroy();
 	}

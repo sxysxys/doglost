@@ -66,6 +66,11 @@ public class DataHandlerUtil {
         return converter.convert();
     }
 
+    public static boolean isEqual(double a,double b)
+    {
+        return Math.abs(a-b) < 0.000001;
+    }
+
 //    private static int getInt(byte[] bytes)
 //    {
 //        return (0xff & bytes[0]) | (0xff00 & (bytes[1] << 8)) | (0xff0000 & (bytes[2] << 16)) | (0xff000000 & (bytes[3] << 24));

@@ -1,5 +1,6 @@
 package com.shen.baidu.doglost.ui.fragment;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
@@ -39,11 +41,13 @@ import com.shen.baidu.doglost.view.IHistoryCallback;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
-
+@RequiresApi(api = Build.VERSION_CODES.N)
 public class HistoryFragment extends Fragment implements IHistoryCallback {
 
     private IHistoryPresenter mHistoryTracePresenter;
@@ -160,15 +164,30 @@ public class HistoryFragment extends Fragment implements IHistoryCallback {
         LogUtils.d(this, "正在处理数据...");
         double lanSum = 0;
         double latSum = 0;
-        for (HistoryPoint.DataBean dataBean : dataBeans) {
-            float latitude = dataBean.getLatitude();
-            float longitude = dataBean.getLongitude();
+        // 先进行去重
+        List<HistoryPoint.DataBean> collects = dataBeans.stream().collect(Collectors.collectingAndThen(
+                Collectors.toCollection(
+                        () -> new TreeSet<>((o1, o2) -> {
+                            if (DataHandlerUtil.isEqual(o1.getLatitude(), o2.getLatitude()) &&
+                                    DataHandlerUtil.isEqual(o1.getLongitude(), o2.getLongitude())) {
+                                return 0;
+                            } else {
+                                return o1.getCreateDate().compareTo(o2.getCreateDate());
+                            }
+                        }))
+                , ArrayList::new)
+        );
+        for (HistoryPoint.DataBean collect : collects) {
+            double latitude = collect.getLatitude();
+            double longitude = collect.getLongitude();
             LatLng baiPosition = DataHandlerUtil.changeGps2Bai(latitude, longitude);
             latLngs.add(baiPosition);
-            latSum += latitude;
-            lanSum += longitude;
+            latSum += baiPosition.latitude;
+            lanSum += baiPosition.longitude;
         }
-        target = new LatLng(latSum / latLngs.size(), lanSum / latLngs.size());
+        double latTarget = latSum / latLngs.size();
+        double lanTarget = lanSum / latLngs.size();
+        target = new LatLng(latTarget, lanTarget);
     }
 
     /**

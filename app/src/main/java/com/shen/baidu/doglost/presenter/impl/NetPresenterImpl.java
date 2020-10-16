@@ -219,6 +219,7 @@ public class NetPresenterImpl implements INetPresenter {
             /**
              * 开启心跳
              */
+            LogUtils.d(this, "连接成功");
             mSendData = SendBean.getInstance();
             mManager.getPulseManager().setPulseSendable(mSendData).pulse();
             if (netCallBack != null) {
